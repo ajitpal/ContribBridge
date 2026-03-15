@@ -136,13 +136,18 @@
         ws.onmessage = (event) => {
             const { type, data } = JSON.parse(event.data);
             if (type === 'issue') {
-                // Remove empty state on first issue
-                const empty = feed.querySelector('.empty-state');
-                if (empty) empty.remove();
-                
+                removeEmptyState();
                 renderIssueCard(data);
+            } else if (type === 'comment') {
+                removeEmptyState();
+                renderCommentCard(data);
             }
         };
+
+        function removeEmptyState() {
+            const empty = feed.querySelector('.empty-state');
+            if (empty) empty.remove();
+        }
 
         function renderIssueCard(issue) {
             const card = document.createElement('div');
@@ -158,6 +163,25 @@
                 <div class="issue-meta">
                     <span>@${issue.author} · ${issue.repo}</span>
                     <span>${issue.confidence}% confidence · ${issue.translationMs}ms</span>
+                </div>
+            `;
+            feed.prepend(card);
+        }
+
+        function renderCommentCard(comment) {
+            const card = document.createElement('div');
+            card.className = 'issue-card';
+            card.style.borderLeft = '4px solid var(--primary)';
+            card.innerHTML = `
+                <div class="issue-header">
+                    <span class="lang-tag" style="background:var(--primary); color:var(--bg)">REPLY: EN → ${comment.locale}</span>
+                    <span style="font-size: 0.8rem; color: var(--dim)">#${comment.issueNumber}</span>
+                </div>
+                <div class="issue-orig">Replied by @${comment.author}</div>
+                <div class="issue-body">${escapeHtml(comment.translatedBody)}</div>
+                <div class="issue-meta">
+                    <span>${comment.repo}</span>
+                    <span>${new Date(comment.timestamp).toLocaleTimeString()}</span>
                 </div>
             `;
             feed.prepend(card);

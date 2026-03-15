@@ -64,7 +64,7 @@ export function issueLicense({ orgId, tier, repos, wordQuota, expiresAt }) {
 
   return jwt.sign(
     {
-      iss: 'contribbridge.dev',
+      iss: 'ajitpal.github.io/ContribBridge/',
       sub: orgId,
       orgId,
       tier,

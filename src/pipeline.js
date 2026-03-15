@@ -173,6 +173,21 @@ export async function processComment(comment, issue, repo) {
       author: comment.user.login,
     });
 
+    // Broadcast to live dashboard
+    broadcast({
+      type: 'comment',
+      data: {
+        id: comment.id,
+        issueNumber: issue.number,
+        repo: repo.full_name,
+        author: comment.user.login,
+        originalBody: comment.body,
+        translatedBody: translatedReply,
+        locale: targetLocale,
+        timestamp: new Date().toISOString()
+      },
+    });
+
     cache.set(`comment:${comment.id}`, true, 3600);
 
     console.log(

@@ -36,9 +36,8 @@ export async function licenseGate(repoFullName, orgId) {
   if (!licenseKey) {
     throw {
       code: 'NO_LICENSE',
-      message:
-        `Private repos require ContribBridge Pro.\n` +
-        `Upgrade: https://contribbridge.dev/upgrade?org=${encodeURIComponent(orgId)}`,
+      message: `Private repos require ContribBridge Pro.\n`,
+      checkoutUrl: `https://ajitpal.github.io/ContribBridge/#upgrade?repo=${encodeURIComponent(repoFullName)}`,
     };
   }
 

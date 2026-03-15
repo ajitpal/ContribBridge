@@ -1,16 +1,24 @@
 {
   "name": "contribbridge",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "license": "Apache-2.0",
+  "files": [
+    "bin",
+    "src",
+    "dashboard",
+    "docs",
+    "keys",
+    "README.md",
+    "LICENSE"
+  ],
   "bin": {
     "contribbridge": "./bin/cli.js"
   },
   "scripts": {
     "start": "node src/server.js",
     "dev": "node src/server.js",
-    "cli": "node bin/cli.js",
-    "tunnel": "npx smee-client --url https://smee.io/NG3lH9TCa8z72kA --path /webhook/github --port 4000"
+    "cli": "node bin/cli.js"
   },
   "dependencies": {
     "@octokit/rest": "^20.0.0",
@@ -21,7 +29,6 @@
     "lingo.dev": "latest",
     "marked": "^9.0.0",
     "node-cache": "^5.1.0",
-    "stripe": "^14.0.0",
     "turndown": "^7.0.0",
     "ws": "^8.0.0"
   }

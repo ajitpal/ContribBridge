@@ -8,10 +8,11 @@ import { writeFileSync, existsSync } from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 
-// ─── Helpers ─────────────────────────────────────────────────────
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, '..');
-const ENV_PATH = path.join(ROOT, '.env');
+// ─── Path Helpers ────────────────────────────────────────────────
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const APP_ROOT = path.resolve(__dirname, '..'); // Source code directory
+const ENV_PATH = path.join(process.cwd(), '.env'); // Where user's config lives
 
 const BANNER = `
  ██████╗ ██████╗ ███╗   ██╗████████╗██████╗ ██╗██████╗ ██████╗ ██████╗ ██╗██████╗  ██████╗ ███████╗
@@ -20,7 +21,7 @@ const BANNER = `
 ██║     ██║   ██║██║╚██╗██║   ██║   ██╔══██╗██║██╔══██╗██╔══██╗██╔══██╗██║██║  ██║██║   ██║██╔══╝
 ╚██████╗╚██████╔╝██║ ╚████║   ██║   ██║  ██║██║██████╔╝██████╔╝██║  ██║██║██████╔╝╚██████╔╝███████╗
  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝╚═════╝  ╚═════╝ ╚══════╝
-                     Translate every GitHub issue — 83 languages — zero config
+                     Translate every GitHub issue — 87 languages — zero config
 `;// ─── UI Helpers ──────────────────────────────────────────────────
 const colors = {
   reset: "\x1b[0m",
@@ -107,13 +108,6 @@ async function cmdInit() {
     '# ─── Pro License (private repos only) ─────────────────',
     '# CONTRIBBRIDGE_LICENSE_KEY=',
     '',
-    '# ─── Billing (billing server only) ────────────────────',
-    '# STRIPE_SECRET_KEY=',
-    '# STRIPE_WEBHOOK_SECRET=',
-    '# STRIPE_PRICE_INDIE=',
-    '# STRIPE_PRICE_TEAM=',
-    '# RESEND_API_KEY=',
-    '',
   ].join('\n');
 
   writeFileSync(ENV_PATH, envContent, 'utf-8');
@@ -148,7 +142,7 @@ async function cmdConnect(repoArg) {
   }
 
   // Dynamic import of github.js (it relies on env vars)
-  const githubPath = pathToFileURL(path.join(ROOT, 'src', 'github.js')).href;
+  const githubPath = pathToFileURL(path.join(APP_ROOT, 'src', 'github.js')).href;
   const { getRepoVisibility, registerWebhook } = await import(githubPath);
 
   print(`\n${colors.cyan}Connecting to ${colors.bright}${repoArg}${colors.reset}...\n`);
@@ -162,7 +156,7 @@ async function cmdConnect(repoArg) {
     if (!process.env.CONTRIBBRIDGE_LICENSE_KEY) {
       printError(
         'Private repos require ContribBridge Pro.\n' +
-        `  Upgrade at: https://contribbridge.dev/upgrade?repo=${encodeURIComponent(repoArg)}\n` +
+        `  Upgrade at: https://ajitpal.github.io/ContribBridge/#upgrade?repo=${encodeURIComponent(repoArg)}\n` +
         '  Once purchased, add CONTRIBBRIDGE_LICENSE_KEY to your .env file.'
       );
       process.exit(1);
@@ -198,7 +192,7 @@ async function cmdWatch() {
   printStep('Starting ContribBridge translation server...\n');
 
   // Import and start the server
-  const serverPath = pathToFileURL(path.join(ROOT, 'src', 'server.js')).href;
+  const serverPath = pathToFileURL(path.join(APP_ROOT, 'src', 'server.js')).href;
   const { startServer } = await import(serverPath);
   await startServer();
 }

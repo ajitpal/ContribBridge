@@ -18,18 +18,36 @@ const server = createServer(app);
 app.use('/webhook/github', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
-// Serve dashboard UI (dashboard/index.html)
+// Serve professional landing page (docs/index.html) at root
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-app.use(express.static(path.join(__dirname, '..', 'dashboard')));
+app.use(express.static(path.join(__dirname, '..', 'docs')));
+
+// Serve minimal real-time dashboard at /dashboard
+app.use('/dashboard', express.static(path.join(__dirname, '..', 'dashboard')));
 
 // ─── GitHub webhook endpoint ─────────────────────────────────────
 app.post('/webhook/github', async (req, res) => {
   const event = req.headers['x-github-event'];
-  const signature = req.headers['x-hub-signature-256'];
-  
+  // 1. Verify GitHub HMAC signature
+  // We prefer SHA256, but fallback to SHA1 if SHA256 is missing
+  const signature256 = req.headers['x-hub-signature-256'];
+  const signature1 = req.headers['x-hub-signature'];
+  const signature = signature256 || signature1;
+
   console.log(`[Webhook] Received ${event} event`);
 
-  // 1. Verify GitHub HMAC-SHA256 signature
+  // Special case: GitHub sends a 'ping' event to test the webhook.
+  if (event === 'ping') {
+    console.log('[Webhook] Received ping event — responding 200 OK');
+    return res.status(200).send('pong');
+  }
+
+  // Handle 'repository' events (setup/meta changes)
+  if (event === 'repository') {
+    console.log('[Webhook] Received repository event — acknowledging');
+    return res.status(200).send('ACK');
+  }
+
   const valid = verifyGitHubSignature(
     signature,
     req.body, // raw Buffer (thanks to express.raw)
@@ -38,8 +56,8 @@ app.post('/webhook/github', async (req, res) => {
 
   if (!valid) {
     console.error(`[Webhook] Invalid signature for ${event} event!`);
-    console.error(`  Received: ${signature?.substring(0, 15)}...`);
-    console.error(`  Secret set: ${process.env.GITHUB_WEBHOOK_SECRET ? 'YES' : 'NO'}`);
+    console.error(`  Received header: ${signature ? (signature.substring(0, 15) + '...') : 'undefined'}`);
+    console.error(`  Secret set on server: ${process.env.GITHUB_WEBHOOK_SECRET ? 'YES' : 'NO'}`);
     return res.status(401).send('Invalid signature');
   }
 

@@ -64,6 +64,21 @@ contribbridge/
 ├── keys/               # RS256 Keypair for offline licensing
 └── .env.example        # Environment template
 ```
+## 🚀 Quick Start
+
+Get up and running in less than 60 seconds.
+
+```bash
+# 1. Install & Initialize
+npx . init  # Prompts for API Keys & sets up .env
+
+# 2. Connect your Repository
+npx . connect --repo your-org/your-repo
+
+# 3. Start Watching
+npx . watch  # Starts the translation server + dashboard
+```
+
 ## 🚀 Local Development & Testing
 
 Follow these steps to experience the full ContribBridge pipeline on your own machine.

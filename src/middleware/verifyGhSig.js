@@ -12,12 +12,9 @@ import crypto from 'crypto';
 export function verifyGitHubSignature(signature, body, secret) {
   if (!signature || !secret) return false;
 
-  const expected =
-    'sha256=' +
-    crypto
-      .createHmac('sha256', secret)
-      .update(body) // body must be raw Buffer, NOT parsed JSON
-      .digest('hex');
+  const algorithm = signature.startsWith('sha256=') ? 'sha256' : 'sha1';
+  const hmac = crypto.createHmac(algorithm, secret);
+  const expected = algorithm + '=' + hmac.update(body).digest('hex');
 
   // Timing-safe comparison prevents timing attacks
   try {

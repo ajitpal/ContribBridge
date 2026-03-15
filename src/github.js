@@ -83,7 +83,7 @@ function formatTranslationComment({ locale, translatedTitle, translatedBody, lab
   
   return [
     `> ${flag} **ContribBridge** · Translated from \`${locale}\` · ${confidence}% confidence`,
-    `> Powered by [Lingo.dev](https://lingo.dev) · [ContribBridge](https://contribbridge.dev)`,
+    `> Powered by [Lingo.dev](https://lingo.dev) · [ContribBridge](https://ajitpal.github.io/ContribBridge/)`,
     '',
     `### ${translatedTitle}`,
     '',
