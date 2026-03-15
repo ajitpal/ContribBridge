@@ -20,3 +20,4 @@ npm-debug.log*
 Thumbs.db
 contribbridge-implementation-guide.md
 contribbridge-implementation-guide.docx
+generate_keys.js
