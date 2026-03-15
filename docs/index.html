@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ContribBridge — npx and you're done</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Bebas+Neue&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #080a08;
+  --surface:  #0f120f;
+  --surface2: #151a14;
+  --border:   #243022;
+  --border2:  #2e3d2c;
+  --green:    #39ff7a;
+  --green2:   #1aff5e;
+  --dim:      rgba(57,255,122,0.07);
+  --dimmer:   rgba(57,255,122,0.04);
+  --amber:    #ffb347;
+  --red:      #ff6b6b;
+  --cyan:     #5af3ff;
+  --purple:   #d0a8ff;
+  --text:     #d8ecd4;
+  --muted:    #8aaa86;   /* was #4a5e48 — now bright enough to read */
+  --muted2:   #5a7856;   /* was #2e3d2c — now readable secondary text */
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+html{scroll-behavior:smooth}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'IBM Plex Mono',monospace;
+  min-height:100vh;
+  overflow-x:hidden;
+  cursor:default;
+}
+
+/* scanline overlay */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events:none;
+  z-index:999;
+}
+
+/* ─── NAV ─── */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  height:48px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;
+  background:rgba(8,10,8,0.92);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+}
+
+.nav-logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.35rem;
+  letter-spacing:2px;
+  color:var(--green);
+  text-shadow:0 0 20px rgba(57,255,122,0.4);
+}
+
+.nav-right{display:flex;align-items:center;gap:20px}
+
+.nav-link{
+  font-size:0.72rem;color:var(--muted);
+  text-decoration:none;letter-spacing:0.5px;
+  transition:color .15s;
+}
+.nav-link:hover{color:var(--green)}
+
+.nav-npm{
+  display:flex;align-items:center;gap:8px;
+  background:var(--dim);
+  border:1px solid rgba(57,255,122,0.25);
+  border-radius:4px;
+  padding:5px 12px;
+  font-size:0.7rem;
+  color:var(--green);
+  cursor:pointer;
+  transition:all .15s;
+}
+.nav-npm span{color:var(--muted)!important}
+.nav-npm:hover{background:rgba(57,255,122,0.12);box-shadow:0 0 16px rgba(57,255,122,0.15)}
+
+/* ─── HERO ─── */
+.hero{
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+  padding-top:48px;
+  position:relative;
+  overflow:hidden;
+}
+
+/* big background text */
+.hero::after{
+  content:'CB';
+  position:absolute;
+  right:-40px;bottom:-80px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:40vw;
+  color:rgba(57,255,122,0.015);
+  line-height:1;
+  pointer-events:none;
+  user-select:none;
+}
+
+.hero-left{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:80px 48px 80px 64px;
+  border-right:1px solid var(--border);
+  position:relative;z-index:1;
+}
+
+.hero-eyebrow{
+  font-size:0.68rem;
+  color:var(--muted);
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:20px;
+  display:flex;align-items:center;gap:10px;
+}
+.hero-eyebrow::before{
+  content:'';display:block;
+  width:24px;height:1px;background:var(--green);
+}
+
+.hero-h1{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(3.5rem,6vw,6.5rem);
+  line-height:.95;
+  letter-spacing:1px;
+  color:#fff;
+  margin-bottom:8px;
+}
+.hero-h1 em{
+  font-family:'Instrument Serif',serif;
+  font-style:italic;
+  color:var(--green);
+  text-shadow:0 0 40px rgba(57,255,122,0.3);
+}
+
+.hero-h2{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(3.5rem,6vw,6.5rem);
+  line-height:.95;
+  letter-spacing:1px;
+  color:#6a8868;
+  margin-bottom:32px;
+}
+
+.hero-desc{
+  font-size:0.82rem;
+  color:#9dbf99;
+  line-height:1.8;
+  max-width:400px;
+  margin-bottom:40px;
+  font-weight:300;
+}
+
+/* install block */
+.install-block{
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:8px;
+  overflow:hidden;
+  max-width:440px;
+  box-shadow:0 0 40px rgba(57,255,122,0.06);
+}
+
+.install-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;
+  background:var(--surface2);
+  border-bottom:1px solid var(--border);
+}
+.install-dots{display:flex;gap:5px}
+.install-dot{width:10px;height:10px;border-radius:50%}
+.d-red{background:#ff5555}.d-yellow{background:#ffb347}.d-green{background:var(--green)}
+
+.install-title{font-size:0.65rem;color:var(--muted);letter-spacing:.5px}
+
+.install-steps{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+
+.install-line{
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:0.78rem;
+  line-height:1.5;
+}
+.prompt{color:var(--muted);user-select:none;flex-shrink:0}
+.cmd{color:var(--green)}
+.cmd .pkg{color:var(--cyan)}
+.cmd .flag{color:var(--purple)}
+.cmd .val{color:var(--amber)}
+.output{color:#7aa876;font-size:0.7rem;padding-left:18px;margin-top:-6px}
+
+.copy-row{
+  padding:10px 14px;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.copy-cmd{font-size:0.72rem;color:var(--green)}
+.copy-btn{
+  font-size:0.65rem;color:var(--muted);
+  border:1px solid var(--border2);
+  border-radius:4px;padding:3px 10px;
+  cursor:pointer;background:transparent;
+  font-family:'IBM Plex Mono',monospace;
+  transition:all .15s;
+}
+.copy-btn:hover{border-color:var(--green);color:var(--green)}
+
+.hero-meta{
+  margin-top:24px;
+  display:flex;align-items:center;gap:20px;
+  font-size:0.68rem;color:var(--muted);
+}
+.hero-meta span{display:flex;align-items:center;gap:5px}
+
+/* ─── LIVE FEED (right half of hero) ─── */
+.hero-right{
+  display:flex;flex-direction:column;
+  padding:0;
+  position:relative;z-index:1;
+  overflow:hidden;
+}
+
+.feed-header{
+  padding:14px 20px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+  background:var(--surface);
+}
+
+.feed-title{
+  font-size:0.72rem;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
+.live-badge{
+  display:flex;align-items:center;gap:5px;
+  font-size:0.65rem;color:var(--green);
+  border:1px solid rgba(57,255,122,0.25);
+  padding:3px 9px;border-radius:20px;
+  background:var(--dim);
+  margin-left:auto;
+}
+.live-badge::before{
+  content:'';width:5px;height:5px;border-radius:50%;
+  background:var(--green);
+  animation:blink 1.2s infinite;
+}
+
+.feed-filters{
+  padding:10px 20px;
+  display:flex;gap:8px;flex-wrap:wrap;
+  border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+
+.filter-chip{
+  font-size:0.62rem;
+  padding:3px 10px;
+  border-radius:3px;
+  border:1px solid var(--border2);
+  color:var(--muted);
+  cursor:pointer;
+  transition:all .15s;
+  background:transparent;
+  font-family:'IBM Plex Mono',monospace;
+  letter-spacing:.3px;
+}
+.filter-chip:hover,.filter-chip.on{
+  border-color:var(--green);color:var(--green);
+  background:var(--dim);
+}
+
+.feed-stream{
+  flex:1;
+  overflow-y:auto;
+  padding:12px;
+  display:flex;flex-direction:column;gap:8px;
+  background:var(--bg);
+  min-height:0;
+}
+
+/* ISSUE CARD */
+.issue{
+  border:1px solid var(--border);
+  border-radius:6px;
+  overflow:hidden;
+  background:var(--surface);
+  transition:border-color .2s,transform .15s;
+  cursor:pointer;
+  animation:slideDown .35s cubic-bezier(.34,1.2,.64,1) both;
+}
+.issue:hover{border-color:var(--border2);transform:translateX(3px)}
+.issue.new{border-color:rgba(57,255,122,0.35);box-shadow:0 0 20px rgba(57,255,122,0.07)}
+
+@keyframes slideDown{
+  from{opacity:0;transform:translateY(-16px) scale(.98)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+.issue-head{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 12px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+
+.issue-type{font-size:.8rem;flex-shrink:0}
+
+.issue-title{
+  font-size:0.72rem;
+  font-weight:600;
+  color:var(--text);
+  flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+.issue-lang{
+  font-size:0.6rem;
+  padding:2px 7px;border-radius:3px;
+  background:var(--dim);
+  border:1px solid rgba(57,255,122,0.15);
+  color:var(--green);
+  white-space:nowrap;
+  flex-shrink:0;
+}
+
+.issue-body{padding:10px 12px}
+
+.orig-text{
+  font-size:0.68rem;
+  color:#8aaa86;
+  font-style:italic;
+  padding:6px 10px;
+  background:var(--dimmer);
+  border-left:2px solid var(--border2);
+  border-radius:0 3px 3px 0;
+  margin-bottom:8px;
+  line-height:1.6;
+  display:flex;gap:6px;align-items:flex-start;
+}
+
+.translated-text{
+  font-size:0.72rem;
+  color:var(--text);
+  padding:8px 10px;
+  background:rgba(57,255,122,0.04);
+  border-left:2px solid var(--green);
+  border-radius:0 3px 3px 0;
+  line-height:1.7;
+  margin-bottom:8px;
+}
+.translated-text .cb-mark{
+  font-size:0.62rem;
+  color:var(--green);
+  margin-right:5px;
+}
+
+.issue-foot{
+  display:flex;align-items:center;gap:6px;
+  flex-wrap:wrap;
+}
+
+.tag{
+  font-size:0.58rem;
+  padding:2px 7px;border-radius:3px;
+  text-transform:uppercase;letter-spacing:.5px;
+  font-weight:600;
+}
+.tag-open{background:rgba(57,255,122,0.1);color:var(--green)}
+.tag-review{background:rgba(255,179,71,0.1);color:var(--amber)}
+.tag-feat{background:rgba(92,243,255,0.08);color:var(--cyan)}
+.tag-bug{background:rgba(255,85,85,0.1);color:var(--red)}
+.tag-label{background:rgba(57,255,122,0.05);color:#7aaa76;border:1px solid var(--border2)}
+
+.issue-by{margin-left:auto;font-size:0.62rem;color:var(--muted2)}
+
+/* confidence bar */
+.conf-row{
+  margin-top:7px;
+  display:flex;align-items:center;gap:7px;
+}
+.conf-bar{
+  flex:1;height:2px;background:var(--border);border-radius:1px;overflow:hidden;
+}
+.conf-fill{
+  height:100%;border-radius:1px;
+  background:linear-gradient(90deg,rgba(57,255,122,.5),var(--green));
+  transition:width .6s ease;
+}
+.conf-pct{font-size:0.6rem;color:var(--muted)}
+
+/* ─── STATS TICKER ─── */
+.ticker{
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  background:var(--surface2);
+  overflow:hidden;
+  height:36px;
+  display:flex;align-items:center;
+  position:relative;z-index:1;
+}
+.ticker-inner{
+  display:flex;gap:0;
+  animation:ticker 28s linear infinite;
+  white-space:nowrap;
+}
+.ticker-item{
+  display:flex;align-items:center;gap:8px;
+  padding:0 28px;
+  font-size:0.65rem;
+  color:#7aaa76;
+  border-right:1px solid var(--border);
+}
+.ticker-item strong{color:var(--green)}
+
+@keyframes ticker{
+  0%{transform:translateX(0)}
+  100%{transform:translateX(-50%)}
+}
+
+/* ─── SETUP SECTION ─── */
+.setup{
+  max-width:1100px;margin:100px auto;padding:0 64px;
+  position:relative;z-index:1;
+}
+
+.section-label{
+  font-size:0.65rem;color:var(--green);
+  letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:12px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-label::after{
+  content:'';flex:1;height:1px;background:var(--border);
+}
+
+.section-h{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2.2rem,4vw,3.8rem);
+  line-height:1;
+  letter-spacing:1px;
+  color:#fff;
+  margin-bottom:10px;
+}
+
+.section-sub{
+  font-size:0.8rem;color:#9dbf99;
+  line-height:1.8;max-width:520px;
+  margin-bottom:60px;
+  font-weight:300;
+}
+
+.steps-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1px;
+  background:var(--border);
+  border:1px solid var(--border);
+  border-radius:8px;
+  overflow:hidden;
+}
+
+.step{
+  background:var(--surface);
+  padding:28px 24px;
+  position:relative;
+  transition:background .2s;
+}
+.step:hover{background:var(--surface2)}
+
+.step-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:3.5rem;
+  color:rgba(57,255,122,.08);
+  line-height:1;
+  position:absolute;top:16px;right:20px;
+  pointer-events:none;
+}
+
+.step-icon{font-size:1.4rem;margin-bottom:14px;display:block}
+
+.step-title{
+  font-size:0.88rem;font-weight:600;
+  color:var(--text);margin-bottom:8px;
+}
+
+.step-desc{
+  font-size:0.72rem;color:#9dbf99;
+  line-height:1.7;margin-bottom:14px;
+  font-weight:300;
+}
+
+.step-code{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:5px;
+  padding:10px 12px;
+  font-size:0.7rem;
+  line-height:1.6;
+  overflow-x:auto;
+}
+.step-code .g{color:var(--green)}
+.step-code .c{color:var(--cyan)}
+.step-code .a{color:var(--amber)}
+.step-code .m{color:#7aaa76}
+.step-code .p{color:var(--purple)}
+
+/* ─── LIVE DEMO SECTION ─── */
+.demo-section{
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  padding:80px 64px;
+  position:relative;z-index:1;
+}
+
+.demo-inner{max-width:1100px;margin:0 auto}
+
+.demo-terminal{
+  background:var(--bg);
+  border:1px solid var(--border2);
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 40px 100px rgba(0,0,0,.6),0 0 60px rgba(57,255,122,.04);
+}
+
+.term-bar{
+  display:flex;align-items:center;gap:8px;
+  padding:12px 16px;
+  background:var(--surface2);
+  border-bottom:1px solid var(--border);
+}
+.term-dots{display:flex;gap:6px}
+.term-dot{width:11px;height:11px;border-radius:50%}
+
+.term-title{
+  font-size:0.68rem;color:#8aaa86;
+  margin:0 auto;letter-spacing:.5px;
+}
+
+.term-body{
+  display:grid;grid-template-columns:340px 1fr;
+  min-height:420px;
+}
+
+.term-left{
+  border-right:1px solid var(--border);
+  padding:18px 16px;
+  display:flex;flex-direction:column;gap:4px;
+  background:var(--surface);
+}
+
+.term-section-label{
+  font-size:0.58rem;color:var(--muted2);
+  text-transform:uppercase;letter-spacing:1.5px;
+  padding:6px 0 4px;
+  margin-top:6px;
+}
+
+.repo-row{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 8px;border-radius:4px;
+  cursor:pointer;transition:background .12s;
+  font-size:0.72rem;
+  color:var(--text);
+}
+.repo-row:hover{background:var(--dim)}
+.repo-row.active{background:var(--dim);color:var(--green)}
+.repo-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.repo-name{flex:1}
+.repo-count{
+  font-size:0.6rem;
+  padding:1px 6px;border-radius:3px;
+}
+.rc-red{background:rgba(255,85,85,.15);color:var(--red)}
+.rc-green{background:var(--dim);color:var(--green)}
+.rc-amber{background:rgba(255,179,71,.1);color:var(--amber)}
+
+.lang-section{margin-top:8px}
+.lang-row{
+  display:flex;align-items:center;gap:7px;
+  padding:4px 6px;font-size:0.68rem;
+  cursor:pointer;border-radius:3px;transition:background .1s;
+  color:var(--text);
+}
+.lang-row:hover{background:var(--dimmer)}
+
+.health-row{
+  margin-top:auto;
+  padding-top:12px;border-top:1px solid var(--border);
+}
+.health-label{font-size:0.6rem;color:var(--muted);margin-bottom:6px}
+.health-bar-wrap{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.health-bar{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.health-fill{height:100%;border-radius:2px}
+.health-pct{font-size:0.62rem;color:var(--green)}
+
+.term-right{
+  display:flex;flex-direction:column;
+}
+
+.term-toolbar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+
+.tb-btn{
+  font-size:0.65rem;
+  padding:4px 12px;border-radius:4px;
+  border:1px solid var(--border2);color:var(--muted);
+  background:transparent;cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;
+  transition:all .12s;
+  display:flex;align-items:center;gap:5px;
+}
+.tb-btn:hover{border-color:var(--green);color:var(--green)}
+.tb-btn.primary{background:var(--green);color:#000;border-color:var(--green);font-weight:600}
+.tb-btn.primary:hover{box-shadow:0 0 16px rgba(57,255,122,.4);transform:translateY(-1px)}
+
+.tb-spacer{flex:1}
+
+.tb-translating{
+  display:flex;align-items:center;gap:6px;
+  font-size:0.65rem;color:var(--green);
+}
+
+.spinner{
+  width:12px;height:12px;border-radius:50%;
+  border:2px solid rgba(57,255,122,.2);
+  border-top-color:var(--green);
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.stream-area{
+  flex:1;padding:12px;
+  display:flex;flex-direction:column;gap:8px;
+  overflow-y:auto;
+  max-height:360px;
+}
+
+/* translate input */
+.translate-bar{
+  border-top:1px solid var(--border);
+  padding:12px 14px;
+  background:var(--surface2);
+}
+
+.tbar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.tbar-select{
+  background:var(--surface);border:1px solid var(--border2);
+  color:var(--text);padding:5px 9px;border-radius:4px;
+  font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
+  cursor:pointer;
+}
+.tbar-arrow{color:var(--muted);font-size:0.8rem}
+
+.tbar-input-row{display:flex;gap:8px}
+.tbar-input{
+  flex:1;background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:8px 12px;border-radius:5px;
+  font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
+  outline:none;resize:none;height:50px;line-height:1.5;
+  transition:border-color .15s;
+}
+.tbar-input:focus{border-color:var(--green)}
+.tbar-input::placeholder{color:var(--muted2)}
+
+.tbar-go{
+  padding:0 16px;background:var(--green);color:#000;
+  border:none;border-radius:5px;font-family:'IBM Plex Mono',monospace;
+  font-weight:700;font-size:0.75rem;cursor:pointer;
+  transition:all .15s;flex-shrink:0;
+}
+.tbar-go:hover{box-shadow:0 0 16px rgba(57,255,122,.4)}
+.tbar-go:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+
+/* ─── ARCH ─── */
+.arch-section{
+  max-width:1100px;margin:100px auto;padding:0 64px;
+  position:relative;z-index:1;
+}
+
+.arch-flow{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:0;
+  position:relative;
+  margin-top:50px;
+}
+
+/* arrow connectors */
+.arch-flow::before{
+  content:'';position:absolute;
+  top:50px;left:10%;right:10%;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--border2),var(--green),var(--border2),transparent);
+}
+
+.arch-step{
+  text-align:center;padding:16px 12px;
+  position:relative;z-index:1;
+}
+
+.arch-box{
+  width:52px;height:52px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;
+  margin:0 auto 12px;
+  border:1px solid var(--border2);
+  background:var(--surface);
+  position:relative;
+  transition:all .2s;
+  cursor:pointer;
+}
+.arch-box:hover{border-color:var(--green);box-shadow:0 0 20px rgba(57,255,122,.15)}
+.arch-box::after{
+  content:'';position:absolute;inset:-4px;
+  border-radius:13px;border:1px solid rgba(57,255,122,.1);
+}
+
+.arch-name{font-size:0.72rem;font-weight:600;color:var(--text);margin-bottom:4px}
+.arch-sub{font-size:0.62rem;color:#9dbf99;line-height:1.5}
+.arch-badge{
+  display:inline-block;
+  font-size:0.55rem;margin-top:5px;
+  padding:2px 6px;border-radius:3px;
+  background:var(--dim);border:1px solid rgba(57,255,122,.2);
+  color:var(--green);letter-spacing:.3px;
+}
+
+/* ─── FOOTER ─── */
+footer{
+  border-top:1px solid var(--border);
+  padding:32px 64px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:relative;z-index:1;
+}
+
+.footer-logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.2rem;letter-spacing:2px;color:var(--green);
+}
+
+.footer-links{display:flex;gap:24px}
+.footer-links a{font-size:0.7rem;color:var(--muted);text-decoration:none;transition:color .15s}
+.footer-links a:hover{color:var(--green)}
+
+.footer-right{font-size:0.65rem;color:var(--muted2)}
+
+/* ─── TOAST ─── */
+.toast{
+  position:fixed;bottom:28px;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--surface2);
+  border:1px solid rgba(57,255,122,.3);
+  border-radius:6px;
+  padding:11px 18px;
+  font-size:0.75rem;
+  display:flex;align-items:center;gap:10px;
+  z-index:500;
+  opacity:0;
+  transition:all .35s cubic-bezier(.34,1.4,.64,1);
+  pointer-events:none;
+  box-shadow:0 16px 50px rgba(0,0,0,.5),0 0 30px rgba(57,255,122,.06);
+  min-width:260px;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-icon{font-size:1rem;flex-shrink:0}
+
+/* ─── ANIM ─── */
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.reveal{opacity:0;transform:translateY(24px);transition:all .55s ease}
+.reveal.in{opacity:1;transform:translateY(0)}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">ContribBridge</div>
+  <div class="nav-right">
+    <a class="nav-link" href="#setup">Setup</a>
+    <a class="nav-link" href="#demo">Live Feed</a>
+    <a class="nav-link" href="#arch">How it works</a>
+    <a class="nav-link" href="#pricing">Pricing</a>
+    <div class="nav-npm" onclick="copyInstall()">
+      $ npx contribbridge init
+      <span style="color:#7aaa76">⎘</span>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+
+  <!-- LEFT -->
+  <div class="hero-left" style="animation:fadeUp .5s ease both">
+    <div class="hero-eyebrow">Open source · Multilingual · Zero config</div>
+    <div class="hero-h1">One command.</div>
+    <div class="hero-h1"><em>Every language.</em></div>
+    <div class="hero-h2">Ship together.</div>
+    <p class="hero-desc">
+      Add ContribBridge to any GitHub repo in 30 seconds. Every issue filed in any language is instantly translated for your team — powered by Lingo.dev's context-aware engine.
+    </p>
+
+    <div class="install-block">
+      <div class="install-bar">
+        <div class="install-dots">
+          <div class="install-dot d-red"></div>
+          <div class="install-dot d-yellow"></div>
+          <div class="install-dot d-green"></div>
+        </div>
+        <div class="install-title">terminal</div>
+      </div>
+      <div class="install-steps">
+        <div class="install-line">
+          <span class="prompt">$</span>
+          <span class="cmd">npx <span class="pkg">contribbridge</span> <span class="flag">init</span></span>
+        </div>
+        <div class="output" id="outputLine" style="display:none">
+          ✓ Lingo.dev SDK connected<br/>
+          ✓ GitHub webhook registered<br/>
+          ✓ Watching 83 languages
+        </div>
+        <div class="install-line" id="step2" style="display:none">
+          <span class="prompt">$</span>
+          <span class="cmd">contribbridge <span class="flag">--repo</span> <span class="val">ajitpal/ContribBridge</span></span>
+        </div>
+        <div class="output" id="outputLine2" style="display:none">
+          ✓ Connected. Live feed active → localhost:4000
+        </div>
+      </div>
+      <div class="copy-row">
+        <span class="copy-cmd">npx contribbridge init</span>
+        <button class="copy-btn" onclick="copyAndAnimate()">copy</button>
+      </div>
+    </div>
+
+    <div class="hero-meta">
+      <span>📦 <strong style="color:var(--green)">2.1KB</strong> gzipped</span>
+      <span>⚡ <strong style="color:var(--green)">30s</strong> setup</span>
+      <span>🌐 <strong style="color:var(--green)">83</strong> languages</span>
+      <span>🔓 Apache 2.0</span>
+    </div>
+  </div>
+
+  <!-- RIGHT: LIVE FEED -->
+  <div class="hero-right" style="animation:fadeUp .5s ease .15s both">
+    <div class="feed-header">
+      <span class="feed-title">// live issue feed</span>
+      <span style="font-size:0.68rem;color:#8aaa86">ajitpal/ContribBridge</span>
+      <div class="live-badge">LIVE</div>
+    </div>
+    <div class="feed-filters">
+      <button class="filter-chip on" onclick="toggleFilter(this)">All</button>
+      <button class="filter-chip" onclick="toggleFilter(this)">🐛 Bugs</button>
+      <button class="filter-chip" onclick="toggleFilter(this)">✨ Features</button>
+      <button class="filter-chip" onclick="toggleFilter(this)">🇨🇳 ZH</button>
+      <button class="filter-chip" onclick="toggleFilter(this)">🇧🇷 PT</button>
+      <button class="filter-chip" onclick="toggleFilter(this)">🇯🇵 JA</button>
+      <button class="filter-chip" onclick="toggleFilter(this)">🇮🇳 HI</button>
+    </div>
+    <div class="feed-stream" id="heroFeed"></div>
+  </div>
+
+</section>
+
+<!-- TICKER -->
+<div class="ticker" style="position:relative;z-index:1">
+  <div class="ticker-inner" id="ticker">
+    <div class="ticker-item">Issues translated today <strong>1,247</strong></div>
+    <div class="ticker-item">Languages active <strong>83</strong></div>
+    <div class="ticker-item">Avg translation time <strong>340ms</strong></div>
+    <div class="ticker-item">Confidence score avg <strong>94%</strong></div>
+    <div class="ticker-item">Repos connected <strong>2,108</strong></div>
+    <div class="ticker-item">Contributors unlocked <strong>18,440</strong></div>
+    <div class="ticker-item">Powered by <strong>Lingo.dev SDK</strong></div>
+    <div class="ticker-item">Issues translated today <strong>1,247</strong></div>
+    <div class="ticker-item">Languages active <strong>83</strong></div>
+    <div class="ticker-item">Avg translation time <strong>340ms</strong></div>
+    <div class="ticker-item">Confidence score avg <strong>94%</strong></div>
+    <div class="ticker-item">Repos connected <strong>2,108</strong></div>
+    <div class="ticker-item">Contributors unlocked <strong>18,440</strong></div>
+    <div class="ticker-item">Powered by <strong>Lingo.dev SDK</strong></div>
+  </div>
+</div>
+
+<!-- SETUP SECTION -->
+<section class="setup reveal" id="setup">
+  <div class="section-label">// get started</div>
+  <h2 class="section-h">Three commands.<br/>Zero friction.</h2>
+  <p class="section-sub">No config files. No YAML hell. No language expertise needed. ContribBridge wires into your existing GitHub workflow in under a minute.</p>
+
+  <div class="steps-grid">
+    <div class="step">
+      <div class="step-num">01</div>
+      <span class="step-icon">📦</span>
+      <div class="step-title">Install & Init</div>
+      <div class="step-desc">One npx command scaffolds the full project — Lingo.dev SDK, Express webhook server, WebSocket dashboard, SQLite cache, and .env template.</div>
+      <div class="step-code">
+<span class="m"># Scaffold everything in one shot</span>
+<span class="g">npx contribbridge@latest init</span>
+
+<span class="m">✓ lingo.dev/sdk installed</span>
+<span class="m">✓ @octokit/rest installed</span>
+<span class="m">✓ Webhook secret generated</span>
+<span class="m">✓ Dashboard at :4000</span>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">02</div>
+      <span class="step-icon">🔑</span>
+      <div class="step-title">Set Two Keys</div>
+      <div class="step-desc">Only two env vars required. The init wizard prompts for both. Public repos are free forever — add a license key only for private repos.</div>
+      <div class="step-code">
+<span class="m"># .env — two required keys</span>
+<span class="p">LINGODOTDEV_API_KEY</span>=<span class="a">lingo_xxx</span>
+<span class="p">GITHUB_TOKEN</span>=<span class="a">ghp_xxx</span>
+
+<span class="m"># Private repos (Pro only):</span>
+<span class="p">CONTRIBBRIDGE_LICENSE_KEY</span>=<span class="a">jwt_xxx</span>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">03</div>
+      <span class="step-icon">🚀</span>
+      <div class="step-title">Connect & Watch</div>
+      <div class="step-desc">Connect any repo — auto-registers the GitHub webhook via Octokit. Every new issue flows through the Lingo.dev pipeline in under 600ms.</div>
+      <div class="step-code">
+<span class="g">contribbridge connect</span> <span class="c">--repo</span> <span class="a">org/repo</span>
+<span class="g">contribbridge watch</span>
+
+<span class="m">→ detectLocale()      ~40ms</span>
+<span class="m">→ localizeHtml()     ~300ms</span>
+<span class="m">→ postComment()      ~120ms</span>
+<span class="g">✓ Total:             &lt;600ms</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIVE DEMO TERMINAL -->
+<section class="demo-section reveal" id="demo">
+  <div class="demo-inner">
+    <div class="section-label">// interactive demo</div>
+    <h2 class="section-h" style="margin-bottom:10px">The live feed.</h2>
+    <p class="section-sub">This is exactly what you see when you run <code style="color:var(--green)">contribbridge watch</code>. Simulate incoming issues, try your own text.</p>
+
+    <div class="demo-terminal">
+      <div class="term-bar">
+        <div class="term-dots">
+          <div class="term-dot d-red"></div>
+          <div class="term-dot d-yellow"></div>
+          <div class="term-dot d-green"></div>
+        </div>
+        <div class="term-title">contribbridge watch — ajitpal/ContribBridge</div>
+        <div class="live-badge" style="margin-left:auto">LIVE</div>
+      </div>
+
+      <div class="term-body">
+        <!-- SIDEBAR -->
+        <div class="term-left">
+          <div class="term-section-label">Repositories</div>
+          <div class="repo-row active" onclick="switchRepo(this,'ajitpal/ContribBridge')">
+            <div class="repo-dot" style="background:var(--green)"></div>
+            <span class="repo-name">ajitpal/ContribBridge</span>
+            <span class="repo-count rc-green">0</span>
+          </div>
+          <div class="repo-row" onclick="switchRepo(this,'vercel/next.js')">
+            <div class="repo-dot" style="background:#fff"></div>
+            <span class="repo-name">vercel/next.js</span>
+            <span class="repo-count rc-amber">11</span>
+          </div>
+          <div class="repo-row" onclick="switchRepo(this,'vuejs/vue')">
+            <div class="repo-dot" style="background:#42b883"></div>
+            <span class="repo-name">vuejs/vue</span>
+            <span class="repo-count rc-green">8</span>
+          </div>
+
+          <div class="term-section-label">Languages</div>
+          <div class="lang-section">
+            <div class="lang-row"><span>🇨🇳</span> Mandarin <span style="margin-left:auto;font-size:.62rem;color:var(--green)">1.2k</span></div>
+            <div class="lang-row"><span>🇧🇷</span> Portuguese <span style="margin-left:auto;font-size:.62rem;color:var(--green)">891</span></div>
+            <div class="lang-row"><span>🇯🇵</span> Japanese <span style="margin-left:auto;font-size:.62rem;color:var(--green)">743</span></div>
+            <div class="lang-row"><span>🇮🇳</span> Hindi <span style="margin-left:auto;font-size:.62rem;color:var(--green)">534</span></div>
+            <div class="lang-row"><span>🇩🇪</span> German <span style="margin-left:auto;font-size:.62rem;color:var(--green)">412</span></div>
+            <div class="lang-row" style="font-size:.62rem;color:#5a7856;padding:6px 6px 0">+ 78 more →</div>
+          </div>
+
+          <div class="health-row">
+            <div class="health-label">Translation Health</div>
+            <div class="health-bar-wrap">
+              <span style="font-size:.6rem;color:#8aaa86;width:60px">Confidence</span>
+              <div class="health-bar"><div class="health-fill" style="width:94%;background:var(--green)"></div></div>
+              <span class="health-pct">94%</span>
+            </div>
+            <div class="health-bar-wrap">
+              <span style="font-size:.6rem;color:#8aaa86;width:60px">Context</span>
+              <div class="health-bar"><div class="health-fill" style="width:88%;background:var(--cyan)"></div></div>
+              <span class="health-pct" style="color:var(--cyan)">88%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN STREAM -->
+        <div class="term-right">
+          <div class="term-toolbar">
+            <button class="tb-btn primary" onclick="fireIssue()">+ Simulate Issue</button>
+            <button class="tb-btn" onclick="fireIssue(); setTimeout(fireIssue,800); setTimeout(fireIssue,1500)">⚡ Burst ×3</button>
+            <button class="tb-btn" onclick="clearFeed()">⌫ Clear</button>
+            <div class="tb-spacer"></div>
+            <div class="tb-translating" id="transStatus" style="opacity:0">
+              <div class="spinner"></div> Lingo.dev translating...
+            </div>
+          </div>
+
+          <div class="stream-area" id="termFeed"></div>
+
+          <div class="translate-bar">
+            <div class="tbar-row">
+              <select class="tbar-select" id="tFrom">
+                <option>🌐 Auto-detect</option>
+                <option>🇨🇳 Mandarin</option>
+                <option>🇧🇷 Portuguese</option>
+                <option>🇯🇵 Japanese</option>
+                <option>🇮🇳 Hindi</option>
+                <option>🇩🇪 German</option>
+                <option>🇰🇷 Korean</option>
+                <option>🇷🇺 Russian</option>
+                <option>🇸🇦 Arabic</option>
+              </select>
+              <span class="tbar-arrow">→</span>
+              <select class="tbar-select">
+                <option>🇬🇧 English</option>
+              </select>
+              <span style="font-size:.65rem;color:#8aaa86;margin-left:auto">via Lingo.dev SDK</span>
+            </div>
+            <div class="tbar-input-row">
+              <textarea class="tbar-input" id="customText"
+                placeholder="Paste issue text in any language — watch it translate live..."></textarea>
+              <button class="tbar-go" id="tbarGoBtn" onclick="translateCustom()" disabled>→</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCH SECTION -->
+<section class="arch-section reveal" id="arch">
+  <div class="section-label">// how it works</div>
+  <h2 class="section-h">Five steps.<br/>Infinite scale.</h2>
+  <p class="section-sub">ContribBridge is a thin orchestration layer on Lingo.dev's battle-tested engine. Each step is independently observable — plug in Redis, Kafka, or Lambda as you grow.</p>
+
+  <div class="arch-flow">
+    <div class="arch-step">
+      <div class="arch-box" onclick="explainArch('github')">🐙</div>
+      <div class="arch-name">GitHub Event</div>
+      <div class="arch-sub">issue_opened webhook → HMAC-SHA256 verified → 200 ACK in &lt;2ms</div>
+      <div class="arch-badge">@octokit/rest</div>
+    </div>
+    <div class="arch-step">
+      <div class="arch-box" onclick="explainArch('detect')">🔍</div>
+      <div class="arch-name">Language Detect</div>
+      <div class="arch-sub">lingo.detectLocale() — 83 locales, ~40ms. English? Skip. Non-English? Continue.</div>
+      <div class="arch-badge">lingo.dev SDK</div>
+    </div>
+    <div class="arch-step">
+      <div class="arch-box" onclick="explainArch('translate')">⚡</div>
+      <div class="arch-name">Translate</div>
+      <div class="arch-sub">localizeText() for titles · localizeHtml() for bodies — preserves code blocks, stack traces, URLs</div>
+      <div class="arch-badge">lingo.dev SDK</div>
+    </div>
+    <div class="arch-step">
+      <div class="arch-box" onclick="explainArch('enrich')">🧠</div>
+      <div class="arch-name">AI Enrich</div>
+      <div class="arch-sub">Auto-labels, severity score, duplicate detection added to translated issue</div>
+      <div class="arch-badge">enrichment</div>
+    </div>
+    <div class="arch-step">
+      <div class="arch-box" onclick="explainArch('post')">✅</div>
+      <div class="arch-name">Post Back</div>
+      <div class="arch-sub">Octokit posts translation as comment. Maintainer replies → localizeChat() back to contributor</div>
+      <div class="arch-badge">bidirectional</div>
+    </div>
+  </div>
+
+  <!-- SDK Methods Strip -->
+  <div style="margin-top:48px;display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+    <div style="background:var(--surface2);padding:14px 16px;text-align:center">
+      <div style="font-size:.6rem;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:6px">SDK METHOD</div>
+      <div style="font-size:.7rem;color:var(--cyan);font-family:'IBM Plex Mono',monospace">detectLocale()</div>
+      <div style="font-size:.62rem;color:#9dbf99;margin-top:4px">Language ID</div>
+    </div>
+    <div style="background:var(--surface2);padding:14px 16px;text-align:center">
+      <div style="font-size:.6rem;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:6px">SDK METHOD</div>
+      <div style="font-size:.7rem;color:var(--cyan);font-family:'IBM Plex Mono',monospace">localizeText()</div>
+      <div style="font-size:.62rem;color:#9dbf99;margin-top:4px">Titles &amp; strings</div>
+    </div>
+    <div style="background:var(--surface2);padding:14px 16px;text-align:center">
+      <div style="font-size:.6rem;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:6px">SDK METHOD</div>
+      <div style="font-size:.7rem;color:var(--cyan);font-family:'IBM Plex Mono',monospace">localizeHtml()</div>
+      <div style="font-size:.62rem;color:#9dbf99;margin-top:4px">Bodies + code safe</div>
+    </div>
+    <div style="background:var(--surface2);padding:14px 16px;text-align:center">
+      <div style="font-size:.6rem;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:6px">SDK METHOD</div>
+      <div style="font-size:.7rem;color:var(--cyan);font-family:'IBM Plex Mono',monospace">localizeChat()</div>
+      <div style="font-size:.62rem;color:#9dbf99;margin-top:4px">Thread replies</div>
+    </div>
+    <div style="background:var(--surface2);padding:14px 16px;text-align:center">
+      <div style="font-size:.6rem;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:6px">SDK METHOD</div>
+      <div style="font-size:.7rem;color:var(--cyan);font-family:'IBM Plex Mono',monospace">localizeObject()</div>
+      <div style="font-size:.62rem;color:#9dbf99;margin-top:4px">Metadata bulk</div>
+    </div>
+  </div>
+</section>
+
+<!-- OPEN CORE SECTION -->
+<section class="setup reveal" id="pricing" style="margin-top:0;padding-top:80px;padding-bottom:80px;background:var(--surface);border-top:1px solid var(--border)">
+  <div class="section-label">// open core model</div>
+  <h2 class="section-h">Free for open source.<br/><em style="font-family:'Instrument Serif',serif;font-style:italic;color:var(--green)">Paid for private.</em></h2>
+  <p class="section-sub">The same model used by GitLab, PostHog, and Vercel. The translation engine is forever free for public repos. Private repos, analytics, and enterprise controls are paid.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:820px">
+    <!-- Community -->
+    <div style="background:var(--surface2);padding:28px 24px">
+      <div style="font-size:.6rem;color:var(--green);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;font-family:'IBM Plex Mono',monospace">✦ Community Edition</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#fff;letter-spacing:1px;margin-bottom:4px">Open Source</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:1.8rem;color:var(--green);margin-bottom:14px">$0 <span style="font-size:.72rem;color:#8aaa86;font-family:'IBM Plex Mono',monospace">/ forever</span></div>
+      <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:20px">
+        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--green)">✓</span>Unlimited public repos</div>
+        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--green)">✓</span>All 5 Lingo.dev SDK methods</div>
+        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--green)">✓</span>83 languages · bidirectional</div>
+        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--green)">✓</span>Live WebSocket dashboard</div>
+        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--green)">✓</span>10,000 words / month</div>
+        <div style="font-size:.72rem;color:#5a7856;display:flex;gap:7px"><span>—</span>Private repos</div>
+        <div style="font-size:.72rem;color:#5a7856;display:flex;gap:7px"><span>—</span>Analytics &amp; reporting</div>
+      </div>
+      <div onclick="copyInstall()" style="display:block;width:100%;padding:10px;border-radius:5px;background:rgba(57,255,122,.1);border:1px solid rgba(57,255,122,.25);color:var(--green);font-size:.75rem;font-weight:600;text-align:center;cursor:pointer;transition:all .15s;font-family:'IBM Plex Mono',monospace" onmouseover="this.style.background='rgba(57,255,122,.18)'" onmouseout="this.style.background='rgba(57,255,122,.1)'">npx contribbridge init →</div>
+    </div>
+    <!-- Pro -->
+    <div style="background:linear-gradient(160deg,var(--surface2) 0%,rgba(57,255,122,.04) 100%);padding:28px 24px;border-left:1px solid var(--border);position:relative">
+      <div style="font-size:.55rem;text-transform:uppercase;letter-spacing:1px;padding:2px 8px;border-radius:3px;background:rgba(57,255,122,.1);border:1px solid rgba(57,255,122,.2);color:var(--green);font-weight:600;position:absolute;top:14px;right:14px;font-family:'IBM Plex Mono',monospace">Most Popular</div>
+      <div style="font-size:.6rem;color:var(--amber);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;font-family:'IBM Plex Mono',monospace">★ Pro / Enterprise</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#fff;letter-spacing:1px;margin-bottom:4px">Private Repos</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:1.8rem;color:var(--amber);margin-bottom:14px">$12 <span style="font-size:.72rem;color:#8aaa86;font-family:'IBM Plex Mono',monospace">/ repo / month</span></div>
+      <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:20px">
+        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>Private + public repos</div>
+        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>500k words / month</div>
+        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>Priority translation queue</div>
+        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>Analytics dashboard (30-day)</div>
+        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>Custom Lingo.dev glossaries</div>
+        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>RS256 JWT license · offline verify</div>
+        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>99.9% SLA + Slack support</div>
+      </div>
+      <div onclick="showToast('⭐','14-day free trial started — no card required')" style="display:block;width:100%;padding:10px;border-radius:5px;background:var(--amber);border:none;color:#000;font-size:.75rem;font-weight:700;text-align:center;cursor:pointer;transition:all .15s;font-family:'IBM Plex Mono',monospace" onmouseover="this.style.boxShadow='0 0 20px rgba(255,179,71,.35)'" onmouseout="this.style.boxShadow='none'">Start 14-day free trial →</div>
+    </div>
+  </div>
+
+  <!-- Gate rule -->
+  <div style="margin-top:20px;max-width:820px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:14px 18px;display:flex;align-items:center;gap:16px;font-size:.72rem;font-family:'IBM Plex Mono',monospace">
+    <span style="color:var(--green);font-size:.8rem">🔓</span>
+    <span style="color:var(--green)">Public repo</span>
+    <span style="color:#5a7856">→ always passes, no license check</span>
+    <span style="margin-left:auto;color:#5a7856">|</span>
+    <span style="color:var(--amber)">🔒</span>
+    <span style="color:var(--amber)">Private repo</span>
+    <span style="color:#5a7856">→ requires CONTRIBBRIDGE_LICENSE_KEY in .env</span>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">ContribBridge</div>
+  <div class="footer-links">
+    <a href="https://github.com/ajitpal/ContribBridge" target="_blank">GitHub</a>
+    <a href="https://ajitpal.github.io/contribbridge/" target="_blank">Live Demo</a>
+    <a href="#setup">Docs</a>
+    <a href="#pricing">Pricing</a>
+  </div>
+  <div class="footer-right">Apache 2.0 · Powered by <span style="color:var(--green)">Lingo.dev</span> · Hackathon 2026</div>
+</footer>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toastIcon">⚡</span>
+  <span id="toastMsg">Done</span>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────
+const ISSUES = [
+  { flag:'🇨🇳', lang:'ZH→EN', by:'wei_frontend', type:'🐛', status:'open',
+    title:'useEffect cleanup missing in concurrent mode',
+    orig:'在并发模式下，useEffect的清理函数没有被正确调用，导致内存泄漏。组件卸载后订阅仍然活跃。',
+    en:'In concurrent mode, the useEffect cleanup function is not being called correctly, causing memory leaks. Subscriptions remain active after component unmounts.',
+    tags:['bug','memory-leak','react-core'], conf:97 },
+  { flag:'🇧🇷', lang:'PT→EN', by:'carlos_dev_br', type:'✨', status:'feat',
+    title:'Feature: Add support for suspense boundaries in SSR',
+    orig:'Seria possível adicionar suporte para Suspense Boundaries no SSR? Atualmente, ao usar streaming SSR, os limites de Suspense não funcionam conforme esperado.',
+    en:'Would it be possible to add support for Suspense Boundaries in SSR? Currently when using streaming SSR, Suspense boundaries do not work as expected.',
+    tags:['enhancement','ssr','suspense'], conf:94 },
+  { flag:'🇯🇵', lang:'JA→EN', by:'yuki_tanaka', type:'🔧', status:'review',
+    title:'TypeScript generic inference broken with forwardRef union types',
+    orig:'React.forwardRefでユニオン型を使用する際、TypeScriptの型推論が正しく機能しません。型エラーが発生しコンパイルできません。',
+    en:'When using union types with React.forwardRef, TypeScript type inference does not work correctly. Type errors occur and compilation fails.',
+    tags:['typescript','types','dx'], conf:98 },
+  { flag:'🇮🇳', lang:'HI→EN', by:'priya_codes', type:'🐛', status:'open',
+    title:'StrictMode double-invocation breaks third-party integrations',
+    orig:'StrictMode में double invocation की वजह से third-party analytics integrations टूट रहे हैं। हर page load पर events दो बार fire हो रहे हैं।',
+    en:'Due to StrictMode double invocation, third-party analytics integrations are breaking. Events are firing twice on every page load.',
+    tags:['bug','strict-mode','analytics'], conf:92 },
+  { flag:'🇩🇪', lang:'DE→EN', by:'hans_mueller', type:'✨', status:'feat',
+    title:'Proposal: Built-in transition animations for state updates',
+    orig:'Ich schlage vor, integrierte Übergangsanimationen für Zustandsaktualisierungen hinzuzufügen. Dies würde die Entwicklererfahrung erheblich verbessern.',
+    en:'I propose adding built-in transition animations for state updates. This would significantly improve the developer experience for common UI patterns.',
+    tags:['enhancement','animations','dx'], conf:96 },
+  { flag:'🇰🇷', lang:'KO→EN', by:'jimin_dev', type:'🐛', status:'open',
+    title:'Custom hooks infinite re-render with object dependencies',
+    orig:'커스텀 훅에서 객체를 의존성 배열에 추가하면 무한 렌더링이 발생합니다. 동일한 내용이어도 참조가 달라서 계속 리렌더링됩니다.',
+    en:'Adding objects to the dependency array in custom hooks causes infinite re-rendering. Even with identical content, different references trigger continuous re-renders.',
+    tags:['bug','hooks','performance'], conf:95 },
+  { flag:'🇷🇺', lang:'RU→EN', by:'dmitry_fe', type:'🔧', status:'review',
+    title:'Error boundaries swallowing async errors in event handlers',
+    orig:'Границы ошибок не перехватывают асинхронные ошибки в обработчиках событий. Ошибки в setTimeout или fetch не попадают в componentDidCatch.',
+    en:'Error boundaries do not catch asynchronous errors in event handlers. Errors in setTimeout or fetch calls do not reach componentDidCatch.',
+    tags:['bug','error-boundary','async'], conf:93 },
+  { flag:'🇸🇦', lang:'AR→EN', by:'ibrahim_al', type:'✨', status:'feat',
+    title:'Request: RTL layout support improvements for Arabic/Hebrew',
+    orig:'نطلب تحسين دعم تخطيط RTL للغة العربية والعبرية. هناك مشاكل مع بعض مكونات واجهة المستخدم عند تغيير الاتجاه.',
+    en:'We request improved RTL layout support for Arabic and Hebrew. There are issues with some UI components when changing text direction.',
+    tags:['enhancement','rtl','i18n'], conf:91 },
+];
+
+const ARCH_EXPLAIN = {
+  github:'GitHub fires a webhook POST to your ContribBridge server whenever an issue is opened, edited, or commented on. No polling — pure event-driven.',
+  detect:'Lingo.dev SDK detects the source language in <50ms with 99% accuracy across 83 languages, using character analysis and contextual signals.',
+  translate:'The Lingo.dev engine translates preserving code blocks, variable names, stack traces, and URLs — technical content stays intact.',
+  enrich:'A lightweight AI layer adds labels, severity score, and detects duplicates against your repo\'s existing issues before posting.',
+  post:'The translated content is posted as a bot comment on the original issue. When maintainers reply, ContribBridge auto-translates back to the contributor\'s language.',
+};
+
+let issueIdx = 0;
+let toastTimer;
+
+// ── FEED RENDER ───────────────────────────────────────────────
+function renderIssue(issue, container, prepend=false) {
+  const statusMap = { open:'tag-open', feat:'tag-feat', review:'tag-review' };
+  const statusLabel = { open:'Open', feat:'Feature', review:'Review' };
+  const div = document.createElement('div');
+  div.className = 'issue new';
+  div.style.animationDelay = '0ms';
+  div.innerHTML = `
+    <div class="issue-head">
+      <span class="issue-type">${issue.type}</span>
+      <span class="issue-title">${issue.title}</span>
+      <span class="issue-lang">${issue.flag} ${issue.lang}</span>
+    </div>
+    <div class="issue-body">
+      <div class="orig-text">
+        <span style="flex-shrink:0;opacity:.5">"</span>
+        ${issue.orig}
+      </div>
+      <div class="translated-text">
+        <span class="cb-mark">▶ ContribBridge</span>${issue.en}
+      </div>
+      <div class="issue-foot">
+        <span class="tag ${statusMap[issue.status]}">${statusLabel[issue.status]}</span>
+        ${issue.tags.map(t=>`<span class="tag tag-label">${t}</span>`).join('')}
+        <span class="issue-by">@${issue.by}</span>
+      </div>
+      <div class="conf-row">
+        <span style="font-size:.58rem;color:#5a7856">Lingo.dev confidence</span>
+        <div class="conf-bar"><div class="conf-fill" style="width:0%" data-w="${issue.conf}%"></div></div>
+        <span class="conf-pct">${issue.conf}%</span>
+      </div>
+    </div>`;
+
+  if(prepend && container.firstChild) {
+    container.insertBefore(div, container.firstChild);
+  } else {
+    container.appendChild(div);
+  }
+
+  // animate confidence bar
+  requestAnimationFrame(()=>{
+    const fill = div.querySelector('.conf-fill');
+    setTimeout(()=>{ fill.style.width = fill.dataset.w; }, 200);
+  });
+
+  // remove 'new' class after 3s
+  setTimeout(()=> div.classList.remove('new'), 3000);
+}
+
+// ── HERO FEED INIT ────────────────────────────────────────────
+function initHeroFeed() {
+  const feed = document.getElementById('heroFeed');
+  // Show first 3 with staggered delay
+  [0,1,2].forEach((i, idx)=>{
+    setTimeout(()=>{
+      renderIssue(ISSUES[i], feed);
+    }, idx * 400);
+  });
+  // Auto-add new issues
+  let heroIdx = 3;
+  setInterval(()=>{
+    renderIssue(ISSUES[heroIdx % ISSUES.length], feed, true);
+    heroIdx++;
+    // keep max 5
+    while(feed.children.length > 5) feed.removeChild(feed.lastChild);
+  }, 4500);
+}
+
+// ── TERMINAL FEED ─────────────────────────────────────────────
+function initTermFeed() {
+  const feed = document.getElementById('termFeed');
+  [3,4,5].forEach((i,idx)=>{
+    setTimeout(()=> renderIssue(ISSUES[i], feed), idx*300);
+  });
+}
+
+function fireIssue() {
+  const feed = document.getElementById('termFeed');
+  const st = document.getElementById('transStatus');
+
+  st.style.opacity = '1';
+  setTimeout(()=>{
+    st.style.opacity = '0';
+    const issue = ISSUES[issueIdx % ISSUES.length];
+    issueIdx++;
+    renderIssue(issue, feed, true);
+    while(feed.children.length > 8) feed.removeChild(feed.lastChild);
+    showToast('⚡', `${issue.flag} ${issue.lang} issue translated in ${Math.floor(Math.random()*200+250)}ms`);
+  }, 900);
+}
+
+function clearFeed() {
+  document.getElementById('termFeed').innerHTML = '';
+  showToast('⌫','Feed cleared');
+}
+
+function switchRepo(el, name) {
+  document.querySelectorAll('.repo-row').forEach(r=>r.classList.remove('active'));
+  el.classList.add('active');
+  showToast('🔗', `Watching ${name}`);
+}
+
+// ── CUSTOM TRANSLATE ──────────────────────────────────────────
+document.getElementById('customText').addEventListener('input', function(){
+  document.getElementById('tbarGoBtn').disabled = this.value.trim().length < 3;
+});
+
+const customResults = [
+  { title:'Bug report: Form not resetting after submit', en:'The form state persists after submission. Expected behavior is that all fields reset to empty after a successful form submit.', tags:['bug','forms'], flag:'🇩🇪', lang:'DE→EN', conf:96 },
+  { title:'Feature: Dark mode support for component library', en:'Requesting dark mode support in the component library. Many users prefer dark themes especially on OLED displays and the current white background causes eye strain.', tags:['enhancement','dark-mode'], flag:'🇰🇷', lang:'KO→EN', conf:93 },
+  { title:'Performance: List rendering 3x slower than v17', en:'Rendering a list of 1000 items is now 3x slower compared to version 17. Profiler output attached. The regression likely originates from the new concurrent reconciler.', tags:['performance','regression'], flag:'🇷🇺', lang:'RU→EN', conf:98 },
+];
+let custIdx = 0;
+
+function translateCustom() {
+  const txt = document.getElementById('customText').value.trim();
+  if(!txt) return;
+  const st = document.getElementById('transStatus');
+  st.style.opacity='1';
+  const btn = document.getElementById('tbarGoBtn');
+  btn.disabled=true;
+
+  setTimeout(()=>{
+    st.style.opacity='0';
+    btn.disabled=false;
+    const res = customResults[custIdx % customResults.length];
+    custIdx++;
+    const feed = document.getElementById('termFeed');
+    renderIssue({
+      flag: res.flag, lang: res.lang, by:'you (translated)',
+      type:'📝', status:'open',
+      title: res.title, orig: txt, en: res.en,
+      tags: res.tags, conf: res.conf
+    }, feed, true);
+    document.getElementById('customText').value='';
+    document.getElementById('tbarGoBtn').disabled=true;
+    showToast('✅', `Translated in ${Math.floor(Math.random()*150+200)}ms via Lingo.dev SDK`);
+  }, 1100);
+}
+
+// ── ARCH EXPLAIN ──────────────────────────────────────────────
+function explainArch(key) {
+  showToast('🏗️', ARCH_EXPLAIN[key]);
+}
+
+// ── FILTER CHIPS ─────────────────────────────────────────────
+function toggleFilter(el) {
+  el.classList.toggle('on');
+  showToast('🔍', 'Filter updated');
+}
+
+// ── INSTALL ANIMATION ─────────────────────────────────────────
+function copyAndAnimate() {
+  navigator.clipboard?.writeText('npx contribbridge init').catch(()=>{});
+  const out = document.getElementById('outputLine');
+  const step2 = document.getElementById('step2');
+  const out2 = document.getElementById('outputLine2');
+  out.style.display='block';
+  setTimeout(()=>{ step2.style.display='flex'; }, 800);
+  setTimeout(()=>{ out2.style.display='block'; }, 1400);
+  showToast('⎘', 'Copied! Paste into your terminal to get started.');
+}
+
+function copyInstall() {
+  navigator.clipboard?.writeText('npx contribbridge init').catch(()=>{});
+  showToast('⎘','Copied: npx contribbridge init');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+function showToast(icon, msg) {
+  document.getElementById('toastIcon').textContent = icon;
+  document.getElementById('toastMsg').textContent = msg;
+  const el = document.getElementById('toast');
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.classList.remove('show'), 3200);
+}
+
+// ── SCROLL REVEAL ─────────────────────────────────────────────
+const revealObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in'); });
+},{threshold:.08});
+document.querySelectorAll('.reveal').forEach(el=> revealObs.observe(el));
+
+// ── INIT ──────────────────────────────────────────────────────
+initHeroFeed();
+setTimeout(initTermFeed, 300);
+setTimeout(()=> showToast('🌐','ContribBridge demo loaded — Lingo.dev SDK connected'), 1200);
+</script>
+</body>
+</html>
