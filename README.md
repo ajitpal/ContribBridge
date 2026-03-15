@@ -60,23 +60,58 @@ contribbridge/
 ├── keys/               # RS256 Keypair for offline licensing
 └── .env.example        # Environment template
 ```
+## 🚀 Local Development & Testing
 
----
+Follow these steps to experience the full ContribBridge pipeline on your own machine.
 
-## 🚀 Quick Start
+### 1. Prerequisites
+- **Lingo.dev API Key**: 
+  - Go to [lingo.dev/dashboard](https://lingo.dev/dashboard).
+  - Navigate to **Settings → API Keys** and click **Create new key**.
+  - *Tip: The Free tier includes 10,000 words/month.*
+- **GitHub PAT (Fine-grained)**: 
+  - Go to [github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta).
+  - **Permissions**: `Issues` (Read/Write), `Webhooks` (Write), and `Metadata` (Read).
+  - **Resource owner**: Select your organization or account.
+- **Node.js**: v20 or higher.
+- **Tunnel Tool**: [Smee.io](https://smee.io/) or [ngrok](https://ngrok.com/) to receive webhooks locally.
 
-Get up and running in less than 60 seconds.
-
+### 2. Set Up the Tunnel (Mandatory for Local)
+GitHub needs a public URL to send webhooks to. Start a tunnel to your local port `4000`:
 ```bash
-# 1. Install & Initialize
-npx . init  # Prompts for API Keys & sets up .env
-
-# 2. Connect your Repository
-npx . connect --repo your-org/your-repo
-
-# 3. Start Watching
-npx . watch  # Starts the translation server + dashboard
+# Using Smee.io (Recommended)
+npx smee-client -u https://smee.io/YOUR_UNIQUE_ID -p 4000 -P /webhook/github
 ```
+*Note the URL (`https://smee.io/...`) for the next step.*
+
+### 3. Initialize ContribBridge
+Initialize the environment and connect your repository:
+```bash
+# 1. Start the wizard
+node bin/cli.js init
+
+# 2. Add your Tunnel URL to .env
+# Open .env and set: WEBHOOK_URL=https://smee.io/YOUR_UNIQUE_ID
+
+# 3. Connect a public test repository
+node bin/cli.js connect --repo your-username/test-repo
+```
+
+### 4. Start the Engine
+Launch the translation server and the live dashboard:
+```bash
+node bin/cli.js watch
+```
+- **Dashboard**: Open `http://localhost:4000` in your browser.
+- **Webhook**: Ready for traffic at `localhost:4000/webhook/github`.
+
+### 5. Run a Test
+Go to your GitHub test repository and create a **New Issue** in a non-English language:
+
+- **Title**: `¡Hola! El sistema no funciona`
+- **Body**: `He intentado registrarme pero el botón de envío no responde en dispositivos móviles.`
+
+**The Magic:** Within seconds, you'll see the translated issue appear on your dashboard, and a translated comment will be posted back to GitHub with suggested labels!
 
 ---
 
@@ -109,7 +144,6 @@ npx . watch  # Starts the translation server + dashboard
 ## 📄 License
 
 Community Edition: **Apache 2.0**
-Pro Edition: **Commercial**
 
 ---
 

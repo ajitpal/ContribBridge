@@ -128,9 +128,20 @@ export async function processIssue(issue, repo) {
  */
 export async function processComment(comment, issue, repo) {
   try {
-    // Skip bot comments to avoid infinite loops
+    // 1. Skip bot comments to avoid infinite loops
+    // GitHub Apps have type 'Bot'; PATs have type 'User'
     if (comment.user.type === 'Bot') return;
-    if (comment.body.includes('ContribBridge')) return; // skip our own comments
+    
+    // 2. Strict brand check: ignore any comment containing our signature
+    if (comment.body.includes('ContribBridge')) {
+      return;
+    }
+
+    // 3. Skip if the comment is from the issue author (contributor)
+    // We only want to translate replies from maintainers BACK to the contributor.
+    if (comment.user.id === issue.user.id) {
+      return;
+    }
 
     // Dedup check
     if (cache.has(`comment:${comment.id}`)) return;

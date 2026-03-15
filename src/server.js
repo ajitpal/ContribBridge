@@ -57,10 +57,15 @@ app.post('/webhook/github', async (req, res) => {
     }
 
     if (event === 'issue_comment' && payload.action === 'created') {
-      console.log(`[Webhook] Processing NEW COMMENT on issue #${payload.issue.number}`);
-      processComment(payload.comment, payload.issue, payload.repository).catch(
-        console.error
-      );
+      const isBot = payload.comment.user.type === 'Bot' || 
+                    payload.comment.body.includes('ContribBridge');
+      
+      if (!isBot) {
+        console.log(`[Webhook] Processing NEW COMMENT on issue #${payload.issue.number}`);
+        processComment(payload.comment, payload.issue, payload.repository).catch(
+          console.error
+        );
+      }
     }
   } catch (err) {
     console.error(`[Webhook] Failed to parse payload: ${err.message}`);
