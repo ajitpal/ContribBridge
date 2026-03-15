@@ -54,24 +54,27 @@ export async function translateIssue({ title, body, detectedLocale }) {
   const td = new TurndownService();
 
   // --- Title ---
-  const translatedTitle = await engine.localizeText(title, {
-    sourceLocale: detectedLocale,
-    targetLocale: 'en',
-  });
+  const translatedTitle = await safeTranslate(
+    () => engine.localizeText(title, {
+      sourceLocale: detectedLocale,
+      targetLocale: 'en',
+    }),
+    title
+  );
 
   // --- Body ---
   let translatedBody = '';
   if (body) {
-    // Convert markdown → HTML so Lingo.dev preserves code blocks,
-    // stack traces, URLs and @mentions during translation.
     const bodyHtml = marked.parse(body);
 
-    const translatedHtml = await engine.localizeHtml(bodyHtml, {
-      sourceLocale: detectedLocale,
-      targetLocale: 'en',
-    });
+    const translatedHtml = await safeTranslate(
+      () => engine.localizeHtml(bodyHtml, {
+        sourceLocale: detectedLocale,
+        targetLocale: 'en',
+      }),
+      bodyHtml
+    );
 
-    // Convert back to markdown for posting as a GitHub comment
     translatedBody = td.turndown(translatedHtml);
   }
 
@@ -85,10 +88,13 @@ export async function translateIssue({ title, body, detectedLocale }) {
  */
 export async function translateReply(text, targetLocale) {
   const engine = lingo ?? (await initLingo());
-  return await engine.localizeText(text, {
-    sourceLocale: 'en',
-    targetLocale,
-  });
+  return await safeTranslate(
+    () => engine.localizeText(text, {
+      sourceLocale: 'en',
+      targetLocale,
+    }),
+    text
+  );
 }
 
 // ─── Method 4-b: localizeChat (full thread) ──────────────────────
@@ -98,9 +104,12 @@ export async function translateReply(text, targetLocale) {
  */
 export async function translateThread(messages, targetLocale) {
   const engine = lingo ?? (await initLingo());
-  return await engine.localizeChat(
-    messages.map((m) => ({ name: m.author, text: m.body })),
-    { sourceLocale: 'en', targetLocale }
+  return await safeTranslate(
+    () => engine.localizeChat(
+      messages.map((m) => ({ name: m.author, text: m.body })),
+      { sourceLocale: 'en', targetLocale }
+    ),
+    messages.map(m => m.body).join('\n')
   );
 }
 
@@ -111,10 +120,13 @@ export async function translateThread(messages, targetLocale) {
  */
 export async function translateObject(obj, { sourceLocale, targetLocale }) {
   const engine = lingo ?? (await initLingo());
-  return await engine.localizeObject(obj, {
-    sourceLocale,
-    targetLocale,
-  });
+  return await safeTranslate(
+    () => engine.localizeObject(obj, {
+      sourceLocale,
+      targetLocale,
+    }),
+    obj
+  );
 }
 
 // ─── Error-handling wrapper ──────────────────────────────────────
