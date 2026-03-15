@@ -102,6 +102,19 @@ export async function translateThread(messages, targetLocale) {
   );
 }
 
+// ─── Method 5: localizeObject (structured UI/metadata) ───────────
+/**
+ * Translate a structured object containing multiple strings (e.g. enriched 
+ * issue metadata). Preserves keys, translates values.
+ */
+export async function translateObject(obj, { sourceLocale, targetLocale }) {
+  const engine = lingo ?? (await initLingo());
+  return await engine.localizeObject(obj, {
+    sourceLocale,
+    targetLocale,
+  });
+}
+
 // ─── Error-handling wrapper ──────────────────────────────────────
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
