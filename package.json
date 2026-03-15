@@ -6,6 +6,12 @@
   "bin": {
     "contribbridge": "./bin/cli.js"
   },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "cli": "node bin/cli.js",
+    "tunnel": "npx smee-client --url https://smee.io/NG3lH9TCa8z72kA --path /webhook/github --port 4000"
+  },
   "dependencies": {
     "@octokit/rest": "^20.0.0",
     "better-sqlite3": "^12.8.0",
