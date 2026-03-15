@@ -2,7 +2,11 @@ This project is a submission for the Lingo.Dev Hackathon.
 
 # 🌎 ContribBridge
 
-**Translate every GitHub issue in real-time using the Lingo.dev SDK — bidirectionally, across 83 languages, with zero config.**
+![ContribBridge Hero Visual](hero_demo_visual_1773611334570.png)
+
+**Translate every GitHub issue in real-time using the Lingo.dev SDK — bidirectionally, across 87 languages, with zero config.**
+
+[**Live Dashboard Demo**](https://ajitpal.github.io/ContribBridge/) | [**GitHub Repo**](https://github.com/ajitpal/ContribBridge)
 
 57% of the world's developers don't write English fluently. They file bugs, find security issues, and request features — but maintainers never see them because they aren't written in English. **ContribBridge** fixes this with three simple command.
 
@@ -117,7 +121,7 @@ Go to your GitHub test repository and create a **New Issue** in a non-English la
 
 ## ✨ Features
 
-- **83 Languages Supported**: Powered by the high-fidelity [Lingo.dev SDK](https://lingo.dev).
+- **87 Languages Supported**: Powered by the high-fidelity [Lingo.dev SDK](https://lingo.dev).
 - **Zero Config**: Automagically detects language and translates to English (or your target locale).
 - **Bidirectional**: Maintainers reply in English; ContribBridge translates it back for the contributor.
 - **Code Preservation**: Intelligent markdown and code block preservation during translation.
