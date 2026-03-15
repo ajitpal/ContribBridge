@@ -14,13 +14,15 @@ export async function initLingo() {
   if (lingo) return lingo;
 
   const apiKey = process.env.LINGODOTDEV_API_KEY;
+  const engineId = process.env.LINGO_ENGINE_ID;
+
   if (!apiKey) {
     throw new Error(
-      'LINGODOTDEV_API_KEY is not set. Get one at https://lingo.dev/dashboard → Settings → API Keys'
+      'LINGODOTDEV_API_KEY is not set. Get one at https://lingo.dev/dashboard'
     );
   }
 
-  lingo = new LingoDotDevEngine({ apiKey });
+  lingo = new LingoDotDevEngine({ apiKey, engineId });
   return lingo;
 }
 
