@@ -21,19 +21,38 @@ const BANNER = `
 ╚██████╗╚██████╔╝██║ ╚████║   ██║   ██║  ██║██║██████╔╝██████╔╝██║  ██║██║██████╔╝╚██████╔╝███████╗
  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝╚═════╝  ╚═════╝ ╚══════╝
                      Translate every GitHub issue — 83 languages — zero config
-`;
+`;// ─── UI Helpers ──────────────────────────────────────────────────
+const colors = {
+  reset: "\x1b[0m",
+  bright: "\x1b[1m",
+  dim: "\x1b[2m",
+  blue: "\x1b[34m",
+  cyan: "\x1b[36m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  red: "\x1b[31m",
+};
 
 function print(msg) {
   console.log(msg);
 }
 
 function printSuccess(msg) {
-  console.log(`✓ ${msg}`);
+  console.log(`${colors.green}✓ ${msg}${colors.reset}`);
 }
 
 function printError(msg) {
-  console.error(`✗ ${msg}`);
+  console.error(`${colors.red}✗ ${msg}${colors.reset}`);
 }
+
+function printBrand(msg) {
+  console.log(`${colors.cyan}${msg}${colors.reset}`);
+}
+
+function printStep(msg) {
+  console.log(`${colors.bright}${colors.blue}➜ ${msg}${colors.reset}`);
+}
+
 
 /** Prompt the user for a single line of input via stdin */
 function ask(question) {
@@ -48,17 +67,17 @@ function ask(question) {
 
 // ─── Command: init ───────────────────────────────────────────────
 async function cmdInit() {
-  print(BANNER);
-  print('Welcome to ContribBridge! Let\'s set up your environment.\n');
+  printBrand(BANNER);
+  printStep('Welcome to ContribBridge! Let\'s set up your environment.\n');
 
   // Prompt for required API keys
-  const lingoKey = await ask('  Lingo.dev API Key (from lingo.dev/dashboard → Settings → API Keys): ');
+  const lingoKey = await ask(`${colors.bright}  Lingo.dev API Key:${colors.reset} (from lingo.dev/dashboard → Settings → API Keys): `);
   if (!lingoKey) {
     printError('LINGODOTDEV_API_KEY is required. Get one at https://lingo.dev/dashboard');
     process.exit(1);
   }
 
-  const ghToken = await ask('  GitHub Token (fine-grained PAT with Issues + Webhooks perms):       ');
+  const ghToken = await ask(`${colors.bright}  GitHub Token:${colors.reset}    (fine-grained PAT with Issues + Webhooks perms):       `);
   if (!ghToken) {
     printError('GITHUB_TOKEN is required. Create one at https://github.com/settings/tokens?type=beta');
     process.exit(1);
@@ -101,14 +120,14 @@ async function cmdInit() {
 
   print('');
   printSuccess('.env file created');
-  printSuccess(`Webhook Secret: ${webhookSecret}`);
+  printSuccess(`Webhook Secret: ${colors.yellow}${webhookSecret}${colors.reset}`);
   print('');
-  print('  Next steps:');
-  print('    1. contribbridge connect --repo <org/repo>');
-  print('    2. contribbridge watch');
+  print(`${colors.bright}  Next steps:${colors.reset}`);
+  print(`    1. ${colors.cyan}contribbridge connect --repo <org/repo>${colors.reset}`);
+  print(`    2. ${colors.cyan}contribbridge watch${colors.reset}`);
   print('');
   print('  Or start the server directly:');
-  print('    node src/server.js');
+  print(`    ${colors.dim}node src/server.js${colors.reset}`);
   print('');
 }
 
@@ -133,7 +152,7 @@ async function cmdConnect(repoArg) {
     path.join(ROOT, 'src', 'github.js')
   );
 
-  print(`\nConnecting to ${repoArg}...\n`);
+  print(`\n${colors.cyan}Connecting to ${colors.bright}${repoArg}${colors.reset}...\n`);
 
   // Check repo visibility
   const { isPrivate, name } = await getRepoVisibility(repoArg);
@@ -176,8 +195,8 @@ async function cmdWatch() {
     process.exit(1);
   }
 
-  print(BANNER);
-  print('Starting ContribBridge server...\n');
+  printBrand(BANNER);
+  printStep('Starting ContribBridge translation server...\n');
 
   // Import and start the server
   const { startServer } = await import(path.join(ROOT, 'src', 'server.js'));
@@ -186,15 +205,15 @@ async function cmdWatch() {
 
 // ─── Command: help ───────────────────────────────────────────────
 function cmdHelp() {
-  print(BANNER);
-  print('Usage: contribbridge <command> [options]\n');
-  print('Commands:');
-  print('  init                     Set up API keys and generate .env file');
-  print('  connect --repo <org/repo> Register GitHub webhook on a repository');
-  print('  watch                    Start the translation server + dashboard');
-  print('  help                     Show this help message');
+  printBrand(BANNER);
+  print(`${colors.bright}Usage:${colors.reset} ${colors.cyan}contribbridge <command> [options]${colors.reset}\n`);
+  print(`${colors.bright}Commands:${colors.reset}`);
+  print(`  ${colors.cyan}init${colors.reset}                     Set up API keys and generate .env file`);
+  print(`  ${colors.cyan}connect --repo <org/repo>${colors.reset} Register GitHub webhook on a repository`);
+  print(`  ${colors.cyan}watch${colors.reset}                    Start the translation server + dashboard`);
+  print(`  ${colors.cyan}help${colors.reset}                     Show this help message`);
   print('');
-  print('Examples:');
+  print(`${colors.bright}Examples:${colors.reset}`);
   print('  npx contribbridge init');
   print('  npx contribbridge connect --repo myorg/myrepo');
   print('  npx contribbridge watch');
