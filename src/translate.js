@@ -1,4 +1,3 @@
-// src/translate.js — Lingo.dev SDK wrapper — all 5 SDK methods + error handling
 import { LingoDotDevEngine } from 'lingo.dev/sdk';
 import { marked } from 'marked';
 import TurndownService from 'turndown';
@@ -22,7 +21,15 @@ export async function initLingo() {
     );
   }
 
-  lingo = new LingoDotDevEngine({ apiKey, engineId });
+  console.log('[Lingo] Initializing engine with API key');
+  try {
+    lingo = new LingoDotDevEngine({ apiKey, engineId });
+    if (!lingo) throw new Error('Failed to create Lingo engine instance');
+    console.log('[Lingo] Engine initialized successfully');
+  } catch (err) {
+    console.error('[Lingo] Critical Error during initialization:', err);
+    throw err;
+  }
   return lingo;
 }
 
@@ -34,7 +41,7 @@ export async function initLingo() {
  */
 export async function detectLanguage(text) {
   const engine = lingo ?? (await initLingo());
-  const locale = await engine.detectLocale(text);
+  const locale = await engine.recognizeLocale(text);
   return {
     locale,
     isEnglish: locale === 'en' || locale.startsWith('en-'),

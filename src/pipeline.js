@@ -23,6 +23,7 @@ import db from './db.js';
  * 10. Cache the issue ID
  */
 export async function processIssue(issue, repo) {
+  console.log(`[Pipeline] Starting processing for issue #${issue.number}...`);
   try {
     // 1. Dedup: skip if already translated
     if (cache.has(`issue:${issue.id}`)) return;

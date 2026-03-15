@@ -24,30 +24,46 @@ app.use(express.static(path.join(__dirname, '..', 'dashboard')));
 
 // ─── GitHub webhook endpoint ─────────────────────────────────────
 app.post('/webhook/github', async (req, res) => {
+  const event = req.headers['x-github-event'];
+  const signature = req.headers['x-hub-signature-256'];
+  
+  console.log(`[Webhook] Received ${event} event`);
+
   // 1. Verify GitHub HMAC-SHA256 signature
   const valid = verifyGitHubSignature(
-    req.headers['x-hub-signature-256'],
+    signature,
     req.body, // raw Buffer (thanks to express.raw)
     process.env.GITHUB_WEBHOOK_SECRET
   );
-  if (!valid) return res.status(401).send('Invalid signature');
+
+  if (!valid) {
+    console.error(`[Webhook] Invalid signature for ${event} event!`);
+    console.error(`  Received: ${signature?.substring(0, 15)}...`);
+    console.error(`  Secret set: ${process.env.GITHUB_WEBHOOK_SECRET ? 'YES' : 'NO'}`);
+    return res.status(401).send('Invalid signature');
+  }
 
   // 2. ACK immediately — GitHub requires response within 10 seconds
   res.status(200).send('ACK');
+  console.log(`[Webhook] Signature verified. Processing ${event}...`);
 
   // 3. Parse and process async (don't block response)
-  const payload = JSON.parse(req.body.toString());
-  const event = req.headers['x-github-event'];
+  try {
+    const payload = JSON.parse(req.body.toString());
 
-  if (event === 'issues' && payload.action === 'opened') {
-    processIssue(payload.issue, payload.repository).catch(console.error);
-  }
+    if (event === 'issues' && payload.action === 'opened') {
+      console.log(`[Webhook] Processing NEW ISSUE: ${payload.issue.title}`);
+      processIssue(payload.issue, payload.repository).catch(console.error);
+    }
 
-  if (event === 'issue_comment' && payload.action === 'created') {
-    // Translate maintainer replies back to contributor's locale
-    processComment(payload.comment, payload.issue, payload.repository).catch(
-      console.error
-    );
+    if (event === 'issue_comment' && payload.action === 'created') {
+      console.log(`[Webhook] Processing NEW COMMENT on issue #${payload.issue.number}`);
+      processComment(payload.comment, payload.issue, payload.repository).catch(
+        console.error
+      );
+    }
+  } catch (err) {
+    console.error(`[Webhook] Failed to parse payload: ${err.message}`);
   }
 });
 
@@ -59,9 +75,11 @@ app.get('/health', (_req, res) => {
 // ─── Exported start function (used by CLI `watch` command) ───────
 export async function startServer() {
   // Initialise Lingo.dev SDK engine
-  await initLingo().catch((err) => {
-    console.warn('Lingo.dev init skipped:', err.message);
-  });
+  try {
+    await initLingo();
+  } catch (err) {
+    console.error('CRITICAL: Lingo.dev initialization failed:', err.message);
+  }
 
   // Initialise WebSocket dashboard feed
   initDashboard(server);

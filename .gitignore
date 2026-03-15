@@ -21,3 +21,5 @@ Thumbs.db
 contribbridge-implementation-guide.md
 contribbridge-implementation-guide.docx
 generate_keys.js
+contribbridge.db-shm
+contribbridge.db-wal

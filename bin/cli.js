@@ -5,7 +5,7 @@
 import { createInterface } from 'readline';
 import { randomBytes } from 'crypto';
 import { writeFileSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -148,9 +148,8 @@ async function cmdConnect(repoArg) {
   }
 
   // Dynamic import of github.js (it relies on env vars)
-  const { getRepoVisibility, registerWebhook } = await import(
-    path.join(ROOT, 'src', 'github.js')
-  );
+  const githubPath = pathToFileURL(path.join(ROOT, 'src', 'github.js')).href;
+  const { getRepoVisibility, registerWebhook } = await import(githubPath);
 
   print(`\n${colors.cyan}Connecting to ${colors.bright}${repoArg}${colors.reset}...\n`);
 
@@ -199,7 +198,8 @@ async function cmdWatch() {
   printStep('Starting ContribBridge translation server...\n');
 
   // Import and start the server
-  const { startServer } = await import(path.join(ROOT, 'src', 'server.js'));
+  const serverPath = pathToFileURL(path.join(ROOT, 'src', 'server.js')).href;
+  const { startServer } = await import(serverPath);
   await startServer();
 }
 
