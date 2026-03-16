@@ -27,22 +27,25 @@ db.exec(`
     confidence    REAL,
     created_at    TEXT    NOT NULL
   );
+`);
 
-  -- Migration: Add original content columns if they don't exist
-  try {
-    const columns = db.prepare("PRAGMA table_info(issues)").all();
-    if (!columns.find(c => c.name === 'original_title')) {
-      db.exec("ALTER TABLE issues ADD COLUMN original_title TEXT");
-    }
-    if (!columns.find(c => c.name === 'original_body')) {
-      db.exec("ALTER TABLE issues ADD COLUMN original_body TEXT");
-    }
-    if (!columns.find(c => c.name === 'author')) {
-      db.exec("ALTER TABLE issues ADD COLUMN author TEXT");
-    }
-  } catch (e) {
-    console.warn('[DB] Migration check failed (likely columns already exist):', e.message);
+// Migration: Add original content columns if they don't exist
+try {
+  const columns = db.prepare("PRAGMA table_info(issues)").all();
+  if (!columns.find(c => c.name === 'original_title')) {
+    db.exec("ALTER TABLE issues ADD COLUMN original_title TEXT");
   }
+  if (!columns.find(c => c.name === 'original_body')) {
+    db.exec("ALTER TABLE issues ADD COLUMN original_body TEXT");
+  }
+  if (!columns.find(c => c.name === 'author')) {
+    db.exec("ALTER TABLE issues ADD COLUMN author TEXT");
+  }
+} catch (e) {
+  console.warn('[DB] Migration check failed (likely columns already exist):', e.message);
+}
+
+db.exec(`
 
   CREATE TABLE IF NOT EXISTS usage (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
