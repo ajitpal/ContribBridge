@@ -168,7 +168,8 @@ app.post('/api/playground', async (req, res) => {
 import db from './db.js';
 
 app.post('/api/connect', async (req, res) => {
-  const { repo } = req.body;
+  const { repo, target_locale } = req.body;
+  const locale = target_locale || 'en';
   const ip = req.ip || req.headers['x-forwarded-for'];
   
   // 1. Guardrail: Strict Type & Format Validation
@@ -187,25 +188,32 @@ app.post('/api/connect', async (req, res) => {
   connectorCooldowns.set(ip, userData);
 
   try {
-    console.log(`[Connector] Attempting to connect: ${repo}...`);
+    console.log(`[Connector] Attempting to connect: ${repo} (locale: ${locale})...`);
     
-    // 3. Graceful check: Already connected?
+    // 3. Check if repo is already connected
     const existing = db.prepare('SELECT mode FROM watched_repos WHERE repo = ?').get(repo);
+    
     if (existing) {
+      // Repo exists — just add the locale (idempotent)
+      db.prepare('INSERT OR IGNORE INTO repo_locales (repo, target_locale, created_at) VALUES (?, ?, ?)')
+        .run(repo, locale, new Date().toISOString());
+      
+      const locales = db.prepare('SELECT target_locale FROM repo_locales WHERE repo = ?').all(repo)
+        .map(r => r.target_locale);
+      
       return res.json({ 
         success: true, 
-        repo, 
-        message: `${repo} is already being watched via ${existing.mode}.` 
+        repo,
+        locales,
+        message: `Locale "${locale}" configured for ${repo}. Active locales: ${locales.join(', ')}` 
       });
     }
 
     // 4. Permission & Mode Selection
     let mode = 'webhook';
     try {
-      // Try to register webhook first
       const { isPrivate } = await getRepoVisibility(repo);
 
-      // License check for private repos
       if (isPrivate && !process.env.CONTRIBBRIDGE_LICENSE_KEY) {
         return res.status(403).json({ 
           error: 'License required for private repositories.',
@@ -215,29 +223,30 @@ app.post('/api/connect', async (req, res) => {
 
       await registerWebhook(repo);
     } catch (err) {
-      // If we get NOPERM (403/404), fallback to Polling Mode
       if (err.code === 'NOPERM') {
         console.warn(`[Connector] No admin access for ${repo}. Falling back to POLLING MODE.`);
         mode = 'polling';
       } else {
-        throw err; // Real error
+        throw err;
       }
     }
 
-    // 5. Persist to Watched Repos
+    // 5. Persist repo + locale
     db.prepare('INSERT INTO watched_repos (repo, mode, created_at) VALUES (?, ?, ?)')
       .run(repo, mode, new Date().toISOString());
+    db.prepare('INSERT INTO repo_locales (repo, target_locale, created_at) VALUES (?, ?, ?)')
+      .run(repo, locale, new Date().toISOString());
 
     res.json({ 
       success: true, 
       repo,
       mode,
+      locales: [locale],
       message: mode === 'webhook' 
-        ? `Successfully connected ${repo} (Webhook Mode)` 
-        : `Connected ${repo} (Polling Mode — watching public feed)`
+        ? `Successfully connected ${repo} (Webhook Mode, locale: ${locale})` 
+        : `Connected ${repo} (Polling Mode, locale: ${locale})`
     });
     
-    // Trigger initial broadcast for the dashboard lists
     broadcastStats();
     
   } catch (err) {

@@ -56,16 +56,16 @@ export async function detectLanguage(text) {
  * 2. Body   → markdown→HTML → localizeHtml (preserves <code> blocks)
  *           → HTML→markdown via Turndown
  */
-export async function translateIssue({ title, body, detectedLocale }) {
+export async function translateIssue({ title, body, detectedLocale, targetLocale }) {
   const engine = lingo ?? (await initLingo());
   const td = new TurndownService();
-  const targetLocale = process.env.TARGET_LOCALE || 'en';
+  const target = targetLocale || process.env.TARGET_LOCALE || 'en';
 
   // --- Title ---
   const translatedTitle = await safeTranslate(
     () => engine.localizeText(title, {
       sourceLocale: detectedLocale,
-      targetLocale,
+      targetLocale: target,
     }),
     title
   );
@@ -78,7 +78,7 @@ export async function translateIssue({ title, body, detectedLocale }) {
     const translatedHtml = await safeTranslate(
       () => engine.localizeHtml(bodyHtml, {
         sourceLocale: detectedLocale,
-        targetLocale,
+        targetLocale: target,
       }),
       bodyHtml
     );

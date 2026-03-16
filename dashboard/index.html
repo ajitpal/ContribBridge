@@ -457,6 +457,22 @@
                     <button class="btn-play" onclick="connectRepo()"
                         style="padding: 8px 12px; font-size: 0.75rem;">LINK</button>
                 </div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+                    <span style="font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; white-space: nowrap;">MY LOCALE</span>
+                    <select id="locale-select" class="play-input" style="padding: 6px; font-size: 0.7rem; width: 100%; cursor: pointer; appearance: auto;">
+                        <option value="en">🇬🇧 English (EN)</option>
+                        <option value="es">🇪🇸 Spanish (ES)</option>
+                        <option value="de">🇩🇪 German (DE)</option>
+                        <option value="fr">🇫🇷 French (FR)</option>
+                        <option value="pt">🇧🇷 Portuguese (PT)</option>
+                        <option value="zh">🇨🇳 Chinese (ZH)</option>
+                        <option value="ja">🇯🇵 Japanese (JA)</option>
+                        <option value="hi">🇮🇳 Hindi (HI)</option>
+                        <option value="ko">🇰🇷 Korean (KO)</option>
+                        <option value="ar">🇸🇦 Arabic (AR)</option>
+                        <option value="ru">🇷🇺 Russian (RU)</option>
+                    </select>
+                </div>
                 <div id="conn-msg"
                     style="font-size: 0.6rem; margin-top: 8px; color: var(--text-dim); text-transform: uppercase;">
                 </div>
@@ -549,7 +565,7 @@
                         </a>
                     </span>
                     <span style="background: var(--surface-bright); padding: 2px 6px; border-radius: 2px; font-size: 0.6rem; color: var(--primary);">
-                        ${(issue.detectedLocale || '??').toUpperCase()} → EN
+                        ${(issue.detectedLocale || '??').toUpperCase()} → ${(issue.targetLocale || 'EN').toUpperCase()}
                     </span>
                     <span>${formatDate(issue.timestamp)}</span>
                 </div>
@@ -575,7 +591,7 @@
             div.className = 'card reply';
             div.innerHTML = `
                 <div class="card-header">
-                    <span>REPLY // EN → ${comment.locale.toUpperCase()}</span>
+                    <span>REPLY // ${(comment.direction || 'EN → ??').toUpperCase()}</span>
                     <span>${formatDate(comment.timestamp)}</span>
                 </div>
                 <div class="card-title">Translated Response</div>
@@ -622,7 +638,7 @@
                     <div style="display: flex; flex-direction: column;">
                         <span style="font-size: 0.8rem;"><span style="margin-right: 8px; opacity: 0.5;">📁</span> ${r.repo}</span>
                         <span style="font-size: 0.55rem; color: var(--text-dim); margin-left: 24px; opacity: 0.7;">
-                            [${r.mode.toUpperCase()}]
+                            [${r.mode.toUpperCase()}] · ${(r.locales || 'en').toUpperCase()}
                         </span>
                     </div>
                     <span class="stat-val">${r.count}</span>
@@ -700,6 +716,7 @@
             const input = document.getElementById('repo-conn');
             const msg = document.getElementById('conn-msg');
             const repo = input.value.trim();
+            const locale = document.getElementById('locale-select').value;
 
             if (!repo) return;
 
@@ -711,7 +728,7 @@
                 const res = await fetch('/api/connect', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ repo })
+                    body: JSON.stringify({ repo, target_locale: locale })
                 });
 
                 const data = await res.json();

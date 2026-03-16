@@ -47,6 +47,14 @@ db.exec(`
     last_polled TEXT,
     created_at  TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS repo_locales (
+    repo          TEXT NOT NULL,
+    target_locale TEXT NOT NULL,
+    created_at    TEXT NOT NULL,
+    PRIMARY KEY (repo, target_locale),
+    FOREIGN KEY (repo) REFERENCES watched_repos(repo)
+  );
 `);
 
 export default db;

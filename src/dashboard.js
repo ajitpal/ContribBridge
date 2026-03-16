@@ -40,9 +40,10 @@ export function initDashboard(httpServer) {
 
       // Get repo stats (from watched_repos)
       const repoStats = db.prepare(`
-        SELECT repo, mode, 
-               (SELECT COUNT(*) FROM issues WHERE repo = watched_repos.repo) as count 
-        FROM watched_repos 
+        SELECT w.repo, w.mode,
+               (SELECT COUNT(*) FROM issues WHERE repo = w.repo) as count,
+               (SELECT GROUP_CONCAT(target_locale) FROM repo_locales WHERE repo = w.repo) as locales
+        FROM watched_repos w
         ORDER BY count DESC
       `).all();
 
@@ -100,9 +101,10 @@ export function broadcast(payload) {
 export function broadcastStats() {
   try {
     const repoStats = db.prepare(`
-      SELECT repo, mode, 
-             (SELECT COUNT(*) FROM issues WHERE repo = watched_repos.repo) as count 
-      FROM watched_repos 
+      SELECT w.repo, w.mode,
+             (SELECT COUNT(*) FROM issues WHERE repo = w.repo) as count,
+             (SELECT GROUP_CONCAT(target_locale) FROM repo_locales WHERE repo = w.repo) as locales
+      FROM watched_repos w
       ORDER BY count DESC
     `).all();
 

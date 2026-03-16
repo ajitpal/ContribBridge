@@ -7,20 +7,18 @@ import { licenseGate } from './middleware/licenseGate.js';
 import cache from './cache.js';
 import db from './db.js';
 
+// ─── Helper: get all target locales for a repo ──────────────────
+function getTargetLocales(repoFullName) {
+  const rows = db.prepare('SELECT target_locale FROM repo_locales WHERE repo = ?').all(repoFullName);
+  if (rows.length > 0) return rows.map(r => r.target_locale);
+  // Fallback to env var or 'en'
+  return [process.env.TARGET_LOCALE || 'en'];
+}
+
 // ─── Process a new issue ─────────────────────────────────────────
 /**
  * Full translation pipeline for a newly opened GitHub issue.
- *
- *  1. Dedup check (cache)
- *  2. License gate (public = free, private = license)
- *  3. Detect source language
- *  4. Skip if English
- *  5. Translate title + body via Lingo.dev SDK
- *  6. AI enrichment (labels, severity)
- *  7. Post translated comment back to GitHub
- *  8. Persist to SQLite
- *  9. Broadcast to live dashboard
- * 10. Cache the issue ID
+ * Translates into ALL configured target locales for the repo.
  */
 export async function processIssue(issue, repo) {
   console.log(`[Pipeline] Starting processing for issue #${issue.number}...`);
@@ -32,39 +30,74 @@ export async function processIssue(issue, repo) {
     await licenseGate(repo.full_name, repo.owner?.login);
 
     // 3. Detect source language
-    const { locale, isEnglish } = await detectLanguage(
+    const { locale } = await detectLanguage(
       issue.title + ' ' + (issue.body || '')
     );
 
-    // 4. Skip if already English — nothing to translate
-    if (isEnglish) return;
+    // 4. Get all configured target locales for this repo
+    const targetLocales = getTargetLocales(repo.full_name)
+      .filter(tl => tl !== locale && !locale.startsWith(tl + '-'));
+
+    if (targetLocales.length === 0) {
+      console.log(`[Pipeline] Issue #${issue.number} is already in all target locales — skipping`);
+      return;
+    }
 
     const startMs = Date.now();
 
-    // 5. Translate title + body via Lingo.dev SDK
-    const { translatedTitle, translatedBody } = await translateIssue({
-      ...issue,
-      detectedLocale: locale,
-    });
+    // 5. Translate to each configured target locale
+    for (const targetLocale of targetLocales) {
+      const { translatedTitle, translatedBody } = await translateIssue({
+        ...issue,
+        detectedLocale: locale,
+        targetLocale,
+      });
 
-    // 6. AI enrichment — labels + severity
-    const enriched = await enrichIssue({
-      title: translatedTitle,
-      body: translatedBody,
-    });
+      // 6. AI enrichment — labels + severity (only once, on first translation)
+      const enriched = await enrichIssue({
+        title: translatedTitle,
+        body: translatedBody,
+      });
 
-    // Add translation timing
-    enriched.ms = enriched.ms || Date.now() - startMs;
+      enriched.ms = enriched.ms || Date.now() - startMs;
 
-    // 7. Post translated comment back to GitHub
-    await postTranslation(repo, issue.number, {
-      locale,
-      translatedTitle,
-      translatedBody,
-      ...enriched,
-    });
+      // 7. Post translated comment back to GitHub
+      await postTranslation(repo, issue.number, {
+        locale,
+        targetLocale,
+        translatedTitle,
+        translatedBody,
+        ...enriched,
+      });
 
-    // 8. Persist to SQLite
+      // 8. Broadcast to live dashboard
+      broadcast({
+        type: 'issue',
+        data: {
+          id: issue.id,
+          number: issue.number,
+          repo: repo.full_name,
+          author: issue.user.login,
+          originalTitle: issue.title,
+          originalBody: issue.body,
+          translatedTitle,
+          translatedBody,
+          detectedLocale: locale,
+          targetLocale,
+          confidence: enriched.confidence,
+          labels: enriched.labels,
+          severity: enriched.severity,
+          translationMs: enriched.ms,
+          timestamp: new Date().toISOString(),
+        },
+      });
+
+      console.log(
+        `✓ Translated issue #${issue.number} (${locale} → ${targetLocale}) in ${enriched.ms}ms`
+      );
+    }
+
+    // 9. Persist to SQLite (store source locale for comment bidirectional lookups)
     db.prepare(
       `INSERT OR REPLACE INTO issues VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
@@ -72,42 +105,18 @@ export async function processIssue(issue, repo) {
       repo.full_name,
       issue.number,
       locale,
-      translatedTitle,
-      translatedBody,
-      enriched.confidence,
+      '', // title stored as empty — multi-locale translations are in comments
+      '',
+      98,
       new Date().toISOString()
     );
 
-    // 9. Broadcast to live dashboard
-    broadcast({
-      type: 'issue',
-      data: {
-        id: issue.id,
-        number: issue.number,
-        repo: repo.full_name,
-        author: issue.user.login,
-        originalTitle: issue.title,
-        originalBody: issue.body,
-        translatedTitle,
-        translatedBody,
-        detectedLocale: locale,
-        confidence: enriched.confidence,
-        labels: enriched.labels,
-        severity: enriched.severity,
-        translationMs: enriched.ms,
-        timestamp: new Date().toISOString(),
-      },
-    });
     broadcastStats();
 
     // 10. Cache the issue so we don't process it again
     cache.set(`issue:${issue.id}`, true, 3600);
 
-    console.log(
-      `✓ Translated issue #${issue.number} (${locale} → en) in ${enriched.ms}ms`
-    );
   } catch (err) {
-    // License gate throws structured error objects
     if (err.code === 'NO_LICENSE' || err.code === 'INVALID_LICENSE') {
       console.warn(`License gate blocked: [${err.code}] ${err.message || err.reason}`);
       return;
@@ -118,16 +127,15 @@ export async function processIssue(issue, repo) {
       );
       return;
     }
-    // Unexpected errors — log but don't crash the server
     console.error(`Pipeline error for issue #${issue?.number}:`, err);
   }
 }
 
 // ─── Process a new comment (bidirectional translation) ───────────
 /**
- * Bidirectional comment translation:
- *  A) Contributor comments in non-English → translate to English
- *  B) Maintainer replies in English → translate back to contributor's language
+ * Bidirectional comment translation with multi-locale support:
+ *  A) Comment NOT in any target locale → translate to all configured locales
+ *  B) Comment in a configured locale on a tracked issue → translate back to contributor's language
  */
 export async function processComment(comment, issue, repo) {
   try {
@@ -150,65 +158,70 @@ export async function processComment(comment, issue, repo) {
     }
 
     // 4. Detect language of the comment
-    const { locale: commentLocale, isEnglish: commentIsEnglish } =
+    const { locale: commentLocale } =
       await detectLanguage(comment.body);
 
-    const isContributor = comment.user.id === issue.user.id;
+    const targetLocales = getTargetLocales(repo.full_name);
+    const isInTargetLocale = targetLocales.some(
+      tl => commentLocale === tl || commentLocale.startsWith(tl + '-')
+    );
 
     // 5. Look up the original issue's detected locale from the DB
     const issueRecord = db
       .prepare('SELECT locale FROM issues WHERE id = ?')
       .get(issue.id);
 
-    // ─── Path A: Contributor follow-up comment (non-English → English) ───
-    if (isContributor && !commentIsEnglish) {
-      console.log(`[Comment] Translating contributor comment on #${issue.number} (${commentLocale} → en)`);
+    // ─── Path A: Comment NOT in any target locale → translate to all target locales ───
+    if (!isInTargetLocale) {
+      const localesToTranslate = targetLocales.filter(
+        tl => tl !== commentLocale && !commentLocale.startsWith(tl + '-')
+      );
 
-      const translatedReply = await translateReply(comment.body, 'en', commentLocale);
+      for (const tl of localesToTranslate) {
+        console.log(`[Comment] Translating comment on #${issue.number} (${commentLocale} → ${tl})`);
 
-      await postReplyTranslation(repo, issue.number, {
-        locale: commentLocale,
-        originalBody: comment.body,
-        translatedBody: translatedReply,
-        author: comment.user.login,
-        direction: 'to-english',
-      });
+        const translatedReply = await translateReply(comment.body, tl, commentLocale);
 
-      broadcast({
-        type: 'comment',
-        data: {
-          id: comment.id,
-          issueNumber: issue.number,
-          repo: repo.full_name,
-          author: comment.user.login,
+        await postReplyTranslation(repo, issue.number, {
+          locale: commentLocale,
           originalBody: comment.body,
           translatedBody: translatedReply,
-          direction: `${commentLocale} → en`,
-          locale: commentLocale,
-          timestamp: new Date().toISOString(),
-        },
-      });
+          author: comment.user.login,
+          direction: 'to-english',
+        });
+
+        broadcast({
+          type: 'comment',
+          data: {
+            id: comment.id,
+            issueNumber: issue.number,
+            repo: repo.full_name,
+            author: comment.user.login,
+            originalBody: comment.body,
+            translatedBody: translatedReply,
+            direction: `${commentLocale} → ${tl}`,
+            locale: commentLocale,
+            timestamp: new Date().toISOString(),
+          },
+        });
+
+        console.log(`✓ Translated comment on #${issue.number} (${commentLocale} → ${tl})`);
+      }
+
       broadcastStats();
       cache.set(`comment:${comment.id}`, true, 3600);
-
-      console.log(`✓ Translated contributor comment on #${issue.number} (${commentLocale} → en)`);
       return;
     }
 
-    // ─── Path B: Maintainer reply in English → contributor's language ────
-    if (!isContributor && commentIsEnglish) {
-      if (!issueRecord || issueRecord.locale === 'en') {
-        console.log(`[Comment] Skipping English reply on #${issue.number} — original issue is English or not tracked`);
-        return;
-      }
+    // ─── Path B: Comment in a target locale on a tracked issue → translate back to contributor's language ───
+    if (isInTargetLocale && issueRecord && !targetLocales.includes(issueRecord.locale)) {
+      const contributorLocale = issueRecord.locale;
+      console.log(`[Comment] Translating reply on #${issue.number} (${commentLocale} → ${contributorLocale})`);
 
-      const targetLocale = issueRecord.locale;
-      console.log(`[Comment] Translating maintainer reply on #${issue.number} (en → ${targetLocale})`);
-
-      const translatedReply = await translateReply(comment.body, targetLocale);
+      const translatedReply = await translateReply(comment.body, contributorLocale, commentLocale);
 
       await postReplyTranslation(repo, issue.number, {
-        locale: targetLocale,
+        locale: contributorLocale,
         originalBody: comment.body,
         translatedBody: translatedReply,
         author: comment.user.login,
@@ -224,20 +237,20 @@ export async function processComment(comment, issue, repo) {
           author: comment.user.login,
           originalBody: comment.body,
           translatedBody: translatedReply,
-          direction: `en → ${targetLocale}`,
-          locale: targetLocale,
+          direction: `${commentLocale} → ${contributorLocale}`,
+          locale: contributorLocale,
           timestamp: new Date().toISOString(),
         },
       });
       broadcastStats();
       cache.set(`comment:${comment.id}`, true, 3600);
 
-      console.log(`✓ Translated maintainer reply on #${issue.number} (en → ${targetLocale})`);
+      console.log(`✓ Translated reply on #${issue.number} (${commentLocale} → ${contributorLocale})`);
       return;
     }
 
     // ─── No translation needed ───────────────────────────────────────
-    console.log(`[Comment] No translation needed for comment #${comment.id} on #${issue.number} (contributor=${isContributor}, english=${commentIsEnglish})`);
+    console.log(`[Comment] No translation needed for comment #${comment.id} on #${issue.number} (locale=${commentLocale}, issueLocale=${issueRecord?.locale || 'untracked'})`);
 
   } catch (err) {
     console.error(`Pipeline error for comment #${comment?.id}:`, err);

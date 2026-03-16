@@ -129,12 +129,13 @@ export async function postReplyTranslation(repo, issueNumber, { locale, original
 /**
  * Format the comment body for GitHub.
  */
-function formatTranslationComment({ locale, translatedTitle, translatedBody, labels, confidence }) {
-  const flagMap = { zh:'🇨🇳', pt:'🇧🇷', ja:'🇯🇵', hi:'🇮🇳', de:'🇩🇪', ko:'🇰🇷', ar:'🇸🇦', ru:'🇷🇺', fr: '🇫🇷', es: '🇪🇸' };
+function formatTranslationComment({ locale, targetLocale, translatedTitle, translatedBody, labels, confidence }) {
+  const flagMap = { zh:'🇨🇳', pt:'🇧🇷', ja:'🇯🇵', hi:'🇮🇳', de:'🇩🇪', ko:'🇰🇷', ar:'🇸🇦', ru:'🇷🇺', fr: '🇫🇷', es: '🇪🇸', en: '🇬🇧' };
   const flag = flagMap[locale.slice(0,2)] || '🌐';
+  const target = targetLocale || 'en';
   
   return [
-    `> ${flag} **ContribBridge** · Translated from \`${locale}\` · ${confidence}% confidence`,
+    `> ${flag} **ContribBridge** · Translated from \`${locale}\` → \`${target}\` · ${confidence}% confidence`,
     `> Powered by [Lingo.dev](https://lingo.dev) · [ContribBridge](https://ajitpal.github.io/ContribBridge/)`,
     '',
     `### ${translatedTitle}`,
