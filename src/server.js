@@ -87,9 +87,20 @@ app.post('/webhook/github', async (req, res) => {
   try {
     const payload = JSON.parse(req.body.toString());
 
-    if (event === 'issues' && payload.action === 'opened') {
-      console.log(`[Webhook] Processing NEW ISSUE: ${payload.issue.title}`);
-      processIssue(payload.issue, payload.repository).catch(console.error);
+    if (event === 'issues') {
+      if (payload.action === 'opened') {
+        console.log(`[Webhook] Processing NEW ISSUE: ${payload.issue.title}`);
+        processIssue(payload.issue, payload.repository).catch(console.error);
+      } else if (payload.action === 'deleted') {
+        console.log(`[Webhook] Processing DELETED ISSUE: #${payload.issue.number}`);
+        db.prepare('DELETE FROM issues WHERE id = ?').run(payload.issue.id);
+        
+        broadcast({
+          type: 'delete_issue',
+          data: { issueNumber: payload.issue.number, repo: payload.repository.full_name }
+        });
+        broadcastStats();
+      }
     }
 
     if (event === 'issue_comment' && payload.action === 'created') {

@@ -551,12 +551,28 @@
             if (type === 'playground_result') {
                 renderPlaygroundResult(data);
             }
+
+            if (type === 'delete_issue') {
+                removeIssueFromFeed(data.repo, data.issueNumber);
+            }
         };
+
+        function removeIssueFromFeed(repo, issueNumber) {
+            // Find all cards matching this repo + issue
+            const cards = feed.querySelectorAll(`.card[data-repo="${repo}"][data-issue-number="${issueNumber}"]`);
+            cards.forEach(card => card.remove());
+
+            if (feed.children.length === 0) {
+                feed.innerHTML = '<div class="empty-state">FEED PURGED / WAITING FOR UPLINK</div>';
+            }
+        }
 
         function renderIssue(issue) {
             removeEmpty();
             const div = document.createElement('div');
             div.className = 'card';
+            div.setAttribute('data-repo', issue.repo);
+            div.setAttribute('data-issue-number', issue.number);
             div.innerHTML = `
                 <div class="card-header">
                     <span>
@@ -589,6 +605,8 @@
             removeEmpty();
             const div = document.createElement('div');
             div.className = 'card reply';
+            div.setAttribute('data-repo', comment.repo);
+            div.setAttribute('data-issue-number', comment.issueNumber);
             div.innerHTML = `
                 <div class="card-header">
                     <span>
