@@ -16,7 +16,7 @@ export function startPolling(intervalMs = 120000) {
   console.log(`[Polling] Starting OSS engine (Interval: ${intervalMs}ms)`);
   
   pollingInterval = setInterval(async () => {
-    const repos = db.prepare('SELECT repo, last_polled FROM watched_repos WHERE mode = "polling"').all();
+    const repos = db.prepare("SELECT repo, last_polled FROM watched_repos WHERE mode = 'polling'").all();
     
     for (const { repo, last_polled } of repos) {
       try {
