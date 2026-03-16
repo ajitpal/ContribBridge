@@ -95,6 +95,7 @@ export async function processIssue(issue, repo) {
         labels: enriched.labels,
         severity: enriched.severity,
         translationMs: enriched.ms,
+        timestamp: new Date().toISOString(),
       },
     });
     broadcastStats();

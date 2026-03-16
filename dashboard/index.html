@@ -367,8 +367,12 @@
             div.className = 'card';
             div.innerHTML = `
                 <div class="card-header">
-                    <span>ISSUE #${issue.number} // ${issue.detectedLocale.toUpperCase()} → EN</span>
-                    <span>${new Date(issue.timestamp).toLocaleTimeString()}</span>
+                    <span>
+                        <a href="https://github.com/${issue.repo}/issues/${issue.number}" target="_blank" style="color: inherit; text-decoration: none;">
+                            ISSUE #${issue.number}
+                        </a> // ${issue.detectedLocale.toUpperCase()} → EN
+                    </span>
+                    <span>${formatDate(issue.timestamp)}</span>
                 </div>
                 <div class="card-title">${escape(issue.translatedTitle)}</div>
                 <div class="card-body">${escape(issue.translatedBody)}</div>
@@ -387,7 +391,7 @@
             div.innerHTML = `
                 <div class="card-header">
                     <span>REPLY // EN → ${comment.locale.toUpperCase()}</span>
-                    <span>${new Date(comment.timestamp).toLocaleTimeString()}</span>
+                    <span>${formatDate(comment.timestamp)}</span>
                 </div>
                 <div class="card-title">Translated Response</div>
                 <div class="card-body">${escape(comment.translatedBody)}</div>
@@ -407,7 +411,7 @@
             div.innerHTML = `
                 <div class="card-header">
                     <span style="color: #fbbf24">PLAYGROUND_TEST // MANUAL_UPLINK</span>
-                    <span>${new Date(data.timestamp).toLocaleTimeString()}</span>
+                    <span>${formatDate(data.timestamp)}</span>
                 </div>
                 <div class="card-title" style="font-size: 0.8rem; color: #6b7280; font-style: italic">Original: ${escape(data.original)}</div>
                 <div class="card-body" style="border-left-color: #fbbf24">${escape(data.translated)}</div>
@@ -417,6 +421,13 @@
                 </div>
             `;
             feed.prepend(div);
+        }
+
+        function formatDate(ts) {
+            if (!ts) return 'just now';
+            const date = new Date(ts);
+            if (isNaN(date.getTime())) return 'now';
+            return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
         }
 
         function updateStats(repos, langs) {
