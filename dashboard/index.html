@@ -287,6 +287,15 @@
                     <li class="empty-state" style="padding: 10px 0; font-size: 0.8rem">No data...</li>
                 </ul>
             </div>
+
+            <div class="stat-section" style="margin-top: auto; border-top: 1px solid var(--border); padding-top: 20px;">
+                <h3><span style="font-size: 1rem">🔗</span> Link Repository</h3>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="repo-conn" class="play-input" placeholder="org/repo" style="padding: 8px; font-size: 0.75rem;">
+                    <button class="btn-play" onclick="connectRepo()" style="padding: 8px 12px; font-size: 0.75rem;">LINK</button>
+                </div>
+                <div id="conn-msg" style="font-size: 0.6rem; margin-top: 8px; color: var(--text-dim); text-transform: uppercase;"></div>
+            </div>
         </aside>
 
         <section id="feed-view">
@@ -473,6 +482,45 @@
                     input.disabled = false;
                     if (!input.value) input.placeholder = 'Paste non-English text to test translation logic...';
                 }, 2000);
+            }
+        }
+
+        async function connectRepo() {
+            const input = document.getElementById('repo-conn');
+            const msg = document.getElementById('conn-msg');
+            const repo = input.value.trim();
+
+            if (!repo) return;
+
+            msg.textContent = 'CONNECTING...';
+            msg.style.color = 'var(--primary)';
+            input.disabled = true;
+
+            try {
+                const res = await fetch('/api/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ repo })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    msg.textContent = '✓ SUCCESS: REPO LINKED';
+                    msg.style.color = 'var(--primary)';
+                    input.value = '';
+                } else {
+                    msg.textContent = `! ERROR: ${data.error.toUpperCase()}`;
+                    msg.style.color = 'var(--danger)';
+                }
+            } catch (err) {
+                msg.textContent = '! CONNECTION FAILED';
+                msg.style.color = 'var(--danger)';
+            } finally {
+                setTimeout(() => {
+                    input.disabled = false;
+                    if (!input.value) msg.textContent = '';
+                }, 4000);
             }
         }
     </script>

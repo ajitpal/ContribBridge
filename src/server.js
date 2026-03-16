@@ -8,6 +8,7 @@ import { verifyGitHubSignature } from './middleware/verifyGhSig.js';
 import { processIssue, processComment } from './pipeline.js';
 import { initDashboard, broadcast } from './dashboard.js';
 import { initLingo, translateGenericText } from './translate.js';
+import { getRepoVisibility, registerWebhook } from './github.js';
 
 // Simple in-memory rate limiter for playground
 const playgroundCooldowns = new Map();
@@ -143,6 +144,45 @@ app.post('/api/playground', async (req, res) => {
     res.json({ translated });
   } catch (err) {
     res.status(500).json({ error: 'Translation failed' });
+  }
+});
+
+// ─── Repository Connector API ────────────────────────────────────
+app.post('/api/connect', async (req, res) => {
+  const { repo } = req.body;
+  
+  if (!repo || !repo.includes('/')) {
+    return res.status(400).json({ error: 'Valid repository (org/repo) required' });
+  }
+
+  try {
+    console.log(`[Connector] Attempting to connect: ${repo}...`);
+    
+    // 1. Check repo visibility
+    const { isPrivate } = await getRepoVisibility(repo);
+
+    // 2. License check for private repos
+    if (isPrivate && !process.env.CONTRIBBRIDGE_LICENSE_KEY) {
+      return res.status(403).json({ 
+        error: 'Private repository requires ContribBridge Pro.',
+        isPrivate: true
+      });
+    }
+
+    // 3. Register Webhook
+    // We use the server-side WEBHOOK_URL if available
+    await registerWebhook(repo);
+
+    res.json({ 
+      success: true, 
+      repo,
+      message: `Successfully connected ${repo}` 
+    });
+  } catch (err) {
+    console.error(`[Connector] Failed to connect ${repo}:`, err.message);
+    res.status(err.status || 500).json({ 
+      error: err.status === 404 ? 'Repository not found' : 'Connection failed' 
+    });
   }
 });
 
