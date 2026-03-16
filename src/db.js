@@ -40,6 +40,13 @@ db.exec(`
     license_key TEXT NOT NULL,
     created_at  TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS watched_repos (
+    repo        TEXT PRIMARY KEY,
+    mode        TEXT NOT NULL, -- 'webhook' or 'polling'
+    last_polled TEXT,
+    created_at  TEXT NOT NULL
+  );
 `);
 
 export default db;

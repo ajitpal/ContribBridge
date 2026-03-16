@@ -38,11 +38,11 @@ export function initDashboard(httpServer) {
         FROM issues
       `).get();
 
-      // Get repo stats
+      // Get repo stats (from watched_repos)
       const repoStats = db.prepare(`
-        SELECT repo, COUNT(*) as count 
-        FROM issues 
-        GROUP BY repo 
+        SELECT repo, mode, 
+               (SELECT COUNT(*) FROM issues WHERE repo = watched_repos.repo) as count 
+        FROM watched_repos 
         ORDER BY count DESC
       `).all();
 
@@ -61,7 +61,7 @@ export function initDashboard(httpServer) {
           repoStats,
           langStats,
           health: {
-            confidence: Math.round((health.avgConf || 0.95) * 100),
+            confidence: Math.round(health.avgConf > 1 ? health.avgConf : (health.avgConf || 0.95) * 100),
             context: Math.min(100, 80 + (health.total * 2)) // Heuristic for context growth
           }
         }
@@ -100,9 +100,9 @@ export function broadcast(payload) {
 export function broadcastStats() {
   try {
     const repoStats = db.prepare(`
-      SELECT repo, COUNT(*) as count 
-      FROM issues 
-      GROUP BY repo 
+      SELECT repo, mode, 
+             (SELECT COUNT(*) FROM issues WHERE repo = watched_repos.repo) as count 
+      FROM watched_repos 
       ORDER BY count DESC
     `).all();
 
@@ -124,7 +124,7 @@ export function broadcastStats() {
         repoStats,
         langStats,
         health: {
-          confidence: Math.round((health.avgConf || 0.95) * 100),
+          confidence: Math.round(health.avgConf > 1 ? health.avgConf : (health.avgConf || 0.95) * 100),
           context: Math.min(100, 80 + (health.total * 2))
         }
       }

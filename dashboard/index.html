@@ -464,7 +464,7 @@
         </aside>
 
         <section id="feed-view">
-            <div class="empty-state">WAITING_FOR_UPLINK...</div>
+            <div class="empty-state">WAITING FOR UPLINK...</div>
         </section>
     </div>
 
@@ -514,7 +514,7 @@
             if (type === 'history') {
                 feed.innerHTML = '';
                 if (data.history.length === 0) {
-                    feed.innerHTML = '<div class="empty-state">DATABASE_EMPTY / WAITING_FOR_TRAFFIC</div>';
+                    feed.innerHTML = '<div class="empty-state">DATABASE EMPTY / WAITING FOR TRAFFIC</div>';
                 }
                 data.history.reverse().forEach(issue => renderIssue(issue));
                 updateStats(data.repoStats, data.langStats, data.health);
@@ -595,7 +595,7 @@
             div.style.borderColor = '#fbbf24'; // Yellow border for playground
             div.innerHTML = `
                 <div class="card-header">
-                    <span style="color: #fbbf24">PLAYGROUND_TEST // MANUAL_UPLINK</span>
+                    <span style="color: #fbbf24">PLAYGROUND TEST // MANUAL UPLINK</span>
                     <span>${formatDate(data.timestamp)}</span>
                 </div>
                 <div class="card-title" style="font-size: 0.8rem; color: #6b7280; font-style: italic">Original: ${escape(data.original)}</div>
@@ -618,8 +618,13 @@
         function updateStats(repos, langs, health) {
             const flags = { 'hi': '🇮🇳', 'zh': '🇨🇳', 'ja': '🇯🇵', 'pt': '🇧🇷', 'de': '🇩🇪', 'es': '🇪🇸', 'fr': '🇫🇷' };
             repoList.innerHTML = repos.map(r => `
-                <li class="stat-item">
-                    <span><span style="margin-right: 8px; opacity: 0.5;">📁</span> ${r.repo}</span>
+                <li class="stat-item" title="Mode: ${r.mode}">
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 0.8rem;"><span style="margin-right: 8px; opacity: 0.5;">📁</span> ${r.repo}</span>
+                        <span style="font-size: 0.55rem; color: var(--text-dim); margin-left: 24px; opacity: 0.7;">
+                            [${r.mode.toUpperCase()}]
+                        </span>
+                    </div>
                     <span class="stat-val">${r.count}</span>
                 </li>
             `).join('') || '<li class="empty-state">No repos...</li>';
@@ -677,7 +682,7 @@
                 }
 
                 input.value = '';
-                input.placeholder = 'TRANSLATION_SUCCESSFUL // READY_FOR_NEXT';
+                input.placeholder = 'TRANSLATION SUCCESSFUL // READY FOR NEXT';
             } catch (err) {
                 input.value = '';
                 input.placeholder = `ERROR: ${err.message.toUpperCase()}`;
@@ -731,7 +736,7 @@
         }
 
         function clearFeed() {
-            feed.innerHTML = '<div class="empty-state">FEED_PURGED / WAITING_FOR_UPLINK</div>';
+            feed.innerHTML = '<div class="empty-state">FEED PURGED / WAITING FOR UPLINK</div>';
         }
     </script>
 </body>

@@ -9,9 +9,11 @@ import { processIssue, processComment } from './pipeline.js';
 import { initDashboard, broadcast } from './dashboard.js';
 import { initLingo, translateGenericText } from './translate.js';
 import { getRepoVisibility, registerWebhook } from './github.js';
+import { startPolling } from './polling.js';
 
-// Simple in-memory rate limiter for playground
+// Simple in-memory rate limiter for playground and connector
 const playgroundCooldowns = new Map();
+const connectorCooldowns = new Map();
 
 // ─── Express app ─────────────────────────────────────────────────
 const app = express();
@@ -148,36 +150,81 @@ app.post('/api/playground', async (req, res) => {
 });
 
 // ─── Repository Connector API ────────────────────────────────────
+import db from './db.js';
+
 app.post('/api/connect', async (req, res) => {
   const { repo } = req.body;
+  const ip = req.ip || req.headers['x-forwarded-for'];
   
-  if (!repo || !repo.includes('/')) {
-    return res.status(400).json({ error: 'Valid repository (org/repo) required' });
+  // 1. Guardrail: Basic validation
+  if (!repo || !repo.includes('/') || repo.split('/').length !== 2) {
+    return res.status(400).json({ error: 'Valid repository (owner/repo) required' });
   }
+
+  // 2. Guardrail: IP-based Rate Limiting (5 connections per minute)
+  const now = Date.now();
+  const userData = connectorCooldowns.get(ip) || { count: 0, reset: now + 60000 };
+  if (now > userData.reset) { userData.count = 0; userData.reset = now + 60000; }
+  if (userData.count >= 5) {
+    return res.status(429).json({ error: 'Too many connection attempts. Please slow down.' });
+  }
+  userData.count++;
+  connectorCooldowns.set(ip, userData);
 
   try {
     console.log(`[Connector] Attempting to connect: ${repo}...`);
     
-    // 1. Check repo visibility
-    const { isPrivate } = await getRepoVisibility(repo);
-
-    // 2. License check for private repos
-    if (isPrivate && !process.env.CONTRIBBRIDGE_LICENSE_KEY) {
-      return res.status(403).json({ 
-        error: 'Private repository requires ContribBridge Pro.',
-        isPrivate: true
+    // 3. Graceful check: Already connected?
+    const existing = db.prepare('SELECT mode FROM watched_repos WHERE repo = ?').get(repo);
+    if (existing) {
+      return res.json({ 
+        success: true, 
+        repo, 
+        message: `${repo} is already being watched via ${existing.mode}.` 
       });
     }
 
-    // 3. Register Webhook
-    // We use the server-side WEBHOOK_URL if available
-    await registerWebhook(repo);
+    // 4. Permission & Mode Selection
+    let mode = 'webhook';
+    try {
+      // Try to register webhook first
+      const { isPrivate } = await getRepoVisibility(repo);
+
+      // License check for private repos
+      if (isPrivate && !process.env.CONTRIBBRIDGE_LICENSE_KEY) {
+        return res.status(403).json({ 
+          error: 'License required for private repositories.',
+          isPrivate: true
+        });
+      }
+
+      await registerWebhook(repo);
+    } catch (err) {
+      // If we get NOPERM (403/404), fallback to Polling Mode
+      if (err.code === 'NOPERM') {
+        console.warn(`[Connector] No admin access for ${repo}. Falling back to POLLING MODE.`);
+        mode = 'polling';
+      } else {
+        throw err; // Real error
+      }
+    }
+
+    // 5. Persist to Watched Repos
+    db.prepare('INSERT INTO watched_repos (repo, mode, created_at) VALUES (?, ?, ?)')
+      .run(repo, mode, new Date().toISOString());
 
     res.json({ 
       success: true, 
       repo,
-      message: `Successfully connected ${repo}` 
+      mode,
+      message: mode === 'webhook' 
+        ? `Successfully connected ${repo} (Webhook Mode)` 
+        : `Connected ${repo} (Polling Mode — watching public feed)`
     });
+    
+    // Trigger initial broadcast for the dashboard lists
+    broadcastStats();
+    
   } catch (err) {
     console.error(`[Connector] Failed to connect ${repo}:`, err.message);
     
@@ -203,6 +250,9 @@ export async function startServer() {
 
   // Initialise WebSocket dashboard feed
   initDashboard(server);
+
+  // Start OSS Polling Engine (fallback for non-admin repos)
+  startPolling();
 
   const PORT = process.env.PORT || 4000;
   server.listen(PORT, () => {
