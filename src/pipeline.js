@@ -92,24 +92,27 @@ export async function processIssue(issue, repo) {
         },
       });
 
+      // 9. Persist to SQLite (store the latest translation for history)
+      db.prepare(
+        `INSERT OR REPLACE INTO issues VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        issue.id,
+        repo.full_name,
+        issue.number,
+        locale,
+        translatedTitle,
+        translatedBody,
+        issue.title,
+        issue.body,
+        issue.user.login,
+        enriched.confidence || 98,
+        new Date().toISOString()
+      );
+
       console.log(
         `✓ Translated issue #${issue.number} (${locale} → ${targetLocale}) in ${enriched.ms}ms`
       );
     }
-
-    // 9. Persist to SQLite (store source locale for comment bidirectional lookups)
-    db.prepare(
-      `INSERT OR REPLACE INTO issues VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      issue.id,
-      repo.full_name,
-      issue.number,
-      locale,
-      '', // title stored as empty — multi-locale translations are in comments
-      '',
-      98,
-      new Date().toISOString()
-    );
 
     broadcastStats();
 

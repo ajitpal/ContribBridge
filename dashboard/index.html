@@ -476,36 +476,47 @@
         };
 
         ws.onmessage = (event) => {
-            const { type, data } = JSON.parse(event.data);
+            try {
+                const { type, data } = JSON.parse(event.data);
+                console.log(`[WS] Received ${type}:`, data);
 
-            if (type === 'history') {
-                feed.innerHTML = '';
-                if (data.history.length === 0) feed.innerHTML = '<div class="empty-state">NO RECENT ACTIVITY</div>';
-                data.history.reverse().forEach(issue => renderIssue(issue));
-                if (data.commentHistory) data.commentHistory.reverse().forEach(comment => renderComment(comment));
-                updateStats(data.repoStats, data.langStats);
+                if (type === 'history') {
+                    feed.innerHTML = '';
+                    if (!data.history || data.history.length === 0) {
+                        feed.innerHTML = '<div class="empty-state">NO RECENT ACTIVITY</div>';
+                    } else {
+                        data.history.reverse().forEach(issue => renderIssue(issue));
+                    }
+                    if (data.commentHistory) {
+                        data.commentHistory.reverse().forEach(comment => renderComment(comment));
+                    }
+                    updateStats(data.repoStats, data.langStats);
+                }
+
+                if (type === 'issue') {
+                    console.log("[Dashboard] Rendering new issue:", data);
+                    renderIssue(data);
+                    logActivity(data.detectedLocale, `Translated issue #${data.number} for ${data.repo}`, data.confidence);
+                    notify('New Issue', `${data.repo} #${data.number}`);
+                }
+
+                if (type === 'comment') {
+                    renderComment(data);
+                    logActivity(data.direction || 'EN', `Translated comment on #${data.issueNumber} by @${data.author}`, 99);
+                    notify('New Comment', `${data.repo} #${data.issueNumber}`);
+                }
+
+                if (type === 'stats') updateStats(data.repoStats, data.langStats);
+                
+                if (type === 'playground_result') {
+                    renderPlaygroundCard(data);
+                    logActivity('MANUAL', 'Playground translation completed', 98);
+                }
+
+                if (type === 'delete_issue') removeIssue(data.repo, data.issueNumber);
+            } catch (err) {
+                console.error('[Dashboard] Error processing WebSocket message:', err);
             }
-
-            if (type === 'issue') {
-                renderIssue(data);
-                logActivity(data.detectedLocale, `Translated issue #${data.number} for ${data.repo}`, data.confidence);
-                notify('New Issue', `${data.repo} #${data.number}`);
-            }
-
-            if (type === 'comment') {
-                renderComment(data);
-                logActivity(data.direction || 'EN', `Translated comment on #${data.issueNumber} by @${data.author}`, 99);
-                notify('New Comment', `${data.repo} #${data.issueNumber}`);
-            }
-
-            if (type === 'stats') updateStats(data.repoStats, data.langStats);
-            
-            if (type === 'playground_result') {
-                renderPlaygroundCard(data);
-                logActivity('MANUAL', 'Playground translation completed', 98);
-            }
-
-            if (type === 'delete_issue') removeIssue(data.repo, data.issueNumber);
         };
 
         // --- Rendering ---
@@ -528,22 +539,28 @@
             const statusTag = issue.state || 'OPEN';
             const issueUrl = `https://github.com/${issue.repo}/issues/${issue.number}`;
             const srcLoc = (issue.detectedLocale || '??').toUpperCase();
+            const tgtLoc = (issue.targetLocale || 'EN').toUpperCase();
             
+            const originalText = [];
+            if (issue.originalTitle) originalText.push(`<strong>${issue.originalTitle}</strong>`);
+            if (issue.originalBody) originalText.push(issue.originalBody);
+            const originalDisplay = originalText.join('<br>') || 'No original content';
+
             div.innerHTML = `
                 <div class="card-header">
                     <a href="${issueUrl}" target="_blank" class="issue-link">
                         <div class="card-title">
-                            ${issue.labels?.includes('bug') ? '🔧 ' : '✨ '}${escape(issue.translatedTitle)}
+                            ${issue.labels?.includes('bug') ? '🔧 ' : '✨ '}${escape(issue.translatedTitle || issue.originalTitle)}
                         </div>
                     </a>
                     <div class="lang-badges">
                         <span class="lang-badge">${srcLoc}</span>
-                        <span class="lang-badge active">${srcLoc}→EN</span>
+                        <span class="lang-badge active">${srcLoc}→${tgtLoc}</span>
                     </div>
                 </div>
                 
                 <div class="quote-block">
-                    ${escape(issue.originalTitle || issue.originalBody || 'No original content')}
+                    ${originalDisplay}
                 </div>
 
                 <div class="trans-block">

@@ -26,7 +26,8 @@ export function initDashboard(httpServer) {
       const history = db.prepare(`
         SELECT id, repo, issue_number as number, locale as detectedLocale, 
                translated_title as translatedTitle, translated_body as translatedBody, 
-               confidence, created_at as timestamp 
+               original_title as originalTitle, original_body as originalBody,
+               author, confidence, created_at as timestamp 
         FROM issues 
         ORDER BY created_at DESC 
         LIMIT 20
