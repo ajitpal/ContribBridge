@@ -10,13 +10,15 @@ const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
  */
 export async function registerWebhook(repoFullName, webhookUrl) {
   const [owner, repo] = repoFullName.split('/');
+  const finalUrl = webhookUrl || `${process.env.WEBHOOK_URL}/webhook/github`;
   
   try {
+    // 1. Try to create the webhook
     const { data } = await octokit.repos.createWebhook({
       owner,
       repo,
       config: {
-        url: webhookUrl || `${process.env.WEBHOOK_URL}/webhook/github`,
+        url: finalUrl,
         content_type: 'json',
         secret: process.env.GITHUB_WEBHOOK_SECRET,
       },
@@ -26,9 +28,29 @@ export async function registerWebhook(repoFullName, webhookUrl) {
     console.log(`✓ Webhook registered for ${repoFullName} (ID: ${data.id})`);
     return data;
   } catch (err) {
+    // 2. If it already exists, update it to ensure it points to OUR current URL
     if (err.status === 422) {
-      console.warn(`! Webhook already exists for ${repoFullName}`);
-      return;
+      console.warn(`! Webhook already exists for ${repoFullName}. Synchronizing configuration...`);
+      
+      const { data: hooks } = await octokit.repos.listWebhooks({ owner, repo });
+      
+      // Look for a hook that ends with /webhook/github or has the same URL
+      const existingHook = hooks.find(h => h.config.url === finalUrl || h.config.url.endsWith('/webhook/github'));
+      
+      if (existingHook) {
+        const { data: updated } = await octokit.repos.updateWebhook({
+          owner,
+          repo,
+          hook_id: existingHook.id,
+          config: {
+            url: finalUrl,
+            content_type: 'json',
+            secret: process.env.GITHUB_WEBHOOK_SECRET,
+          },
+        });
+        console.log(`✓ Webhook updated for ${repoFullName} (Points to: ${finalUrl})`);
+        return updated;
+      }
     }
     throw err;
   }

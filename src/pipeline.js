@@ -2,7 +2,7 @@
 import { detectLanguage, translateIssue, translateReply } from './translate.js';
 import { enrichIssue } from './enrich.js';
 import { postTranslation, postReplyTranslation } from './github.js';
-import { broadcast } from './dashboard.js';
+import { broadcast, broadcastStats } from './dashboard.js';
 import { licenseGate } from './middleware/licenseGate.js';
 import cache from './cache.js';
 import db from './db.js';
@@ -97,6 +97,7 @@ export async function processIssue(issue, repo) {
         translationMs: enriched.ms,
       },
     });
+    broadcastStats();
 
     // 10. Cache the issue so we don't process it again
     cache.set(`issue:${issue.id}`, true, 3600);
@@ -187,6 +188,7 @@ export async function processComment(comment, issue, repo) {
         timestamp: new Date().toISOString()
       },
     });
+    broadcastStats();
 
     cache.set(`comment:${comment.id}`, true, 3600);
 

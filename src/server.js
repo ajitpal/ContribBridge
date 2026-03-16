@@ -6,8 +6,11 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import { verifyGitHubSignature } from './middleware/verifyGhSig.js';
 import { processIssue, processComment } from './pipeline.js';
-import { initDashboard } from './dashboard.js';
-import { initLingo } from './translate.js';
+import { initDashboard, broadcast } from './dashboard.js';
+import { initLingo, translateGenericText } from './translate.js';
+
+// Simple in-memory rate limiter for playground
+const playgroundCooldowns = new Map();
 
 // ─── Express app ─────────────────────────────────────────────────
 const app = express();
@@ -93,6 +96,54 @@ app.post('/webhook/github', async (req, res) => {
 // ─── Health check ────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+// ─── Translation Playground API ──────────────────────────────────
+app.post('/api/playground', async (req, res) => {
+  const { text } = req.body;
+  const ip = req.ip || req.headers['x-forwarded-for'];
+
+  if (!text) return res.status(400).json({ error: 'Text is required' });
+
+  // 1. Guardrail: Character Limit
+  if (text.length > 1000) {
+    return res.status(400).json({ error: 'Text too long (max 1000 characters)' });
+  }
+
+  // 2. Guardrail: IP-based Rate Limiting (10 reqs per minute)
+  const now = Date.now();
+  const userData = playgroundCooldowns.get(ip) || { count: 0, reset: now + 60000 };
+  
+  if (now > userData.reset) {
+    userData.count = 0;
+    userData.reset = now + 60000;
+  }
+
+  if (userData.count >= 10) {
+    return res.status(429).json({ error: 'Too many requests. Please wait a minute.' });
+  }
+
+  userData.count++;
+  playgroundCooldowns.set(ip, userData);
+
+  try {
+    console.log(`[Playground] Translating for IP ${ip}...`);
+    const translated = await translateGenericText(text, 'en');
+    
+    // Broadcast playground result so it shows up in dashboard feed as a special item
+    broadcast({
+      type: 'playground_result',
+      data: {
+        original: text,
+        translated,
+        timestamp: new Date().toISOString()
+      }
+    });
+
+    res.json({ translated });
+  } catch (err) {
+    res.status(500).json({ error: 'Translation failed' });
+  }
 });
 
 // ─── Exported start function (used by CLI `watch` command) ───────

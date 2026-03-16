@@ -1,5 +1,6 @@
 // src/dashboard.js — WebSocket server for real-time dashboard updates
 import { WebSocketServer } from 'ws';
+import db from './db.js';
 
 const clients = new Set();
 
@@ -13,10 +14,51 @@ export function initDashboard(httpServer) {
     clients.add(ws);
     console.log(`+ Dashboard client connected (total: ${clients.size})`);
 
+    // 1. Send connection ACK
     ws.send(JSON.stringify({ 
       type: 'connected', 
       data: { clients: clients.size, timestamp: new Date().toISOString() } 
     }));
+
+    // 2. Load historical data from SQLite
+    try {
+      // Get last 20 issues
+      const history = db.prepare(`
+        SELECT id, repo, issue_number as number, locale as detectedLocale, 
+               translated_title as translatedTitle, translated_body as translatedBody, 
+               confidence, created_at as timestamp 
+        FROM issues 
+        ORDER BY created_at DESC 
+        LIMIT 20
+      `).all();
+
+      // Get repo stats
+      const repoStats = db.prepare(`
+        SELECT repo, COUNT(*) as count 
+        FROM issues 
+        GROUP BY repo 
+        ORDER BY count DESC
+      `).all();
+
+      // Get language stats
+      const langStats = db.prepare(`
+        SELECT locale as lang, COUNT(*) as count 
+        FROM issues 
+        GROUP BY locale 
+        ORDER BY count DESC
+      `).all();
+
+      ws.send(JSON.stringify({
+        type: 'history',
+        data: {
+          history,
+          repoStats,
+          langStats
+        }
+      }));
+    } catch (err) {
+      console.error('[Dashboard] Failed to load history:', err.message);
+    }
 
     ws.on('close', () => {
       clients.delete(ws);
@@ -39,5 +81,36 @@ export function broadcast(payload) {
     if (ws.readyState === 1) { // 1 = OPEN
       ws.send(msg);
     }
+  }
+}
+
+/**
+ * Broadcast updated stats (repos/langs) to all clients
+ */
+export function broadcastStats() {
+  try {
+    const repoStats = db.prepare(`
+      SELECT repo, COUNT(*) as count 
+      FROM issues 
+      GROUP BY repo 
+      ORDER BY count DESC
+    `).all();
+
+    const langStats = db.prepare(`
+      SELECT locale as lang, COUNT(*) as count 
+      FROM issues 
+      GROUP BY locale 
+      ORDER BY count DESC
+    `).all();
+
+    broadcast({
+      type: 'stats',
+      data: {
+        repoStats,
+        langStats
+      }
+    });
+  } catch (err) {
+    console.error('[Dashboard] Failed to broadcast stats:', err.message);
   }
 }

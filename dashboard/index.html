@@ -3,195 +3,477 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ContribBridge | Live Translation Feed</title>
+    <title>ContribBridge | Control Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --text: #f8fafc;
-            --dim: #94a3b8;
-            --primary: #38bdf8;
+            --bg: #050705;
+            --surface: #0a0d0a;
+            --surface-bright: #101510;
+            --border: #1a251a;
+            --primary: #39ff7a;
+            --primary-glow: rgba(57, 255, 122, 0.4);
+            --primary-dim: rgba(57, 255, 122, 0.1);
+            --text: #dcfce7;
+            --text-dim: #4ade80;
+            --danger: #ef4444;
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
             background: var(--bg);
             color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #334155;
-            padding-bottom: 20px;
-            margin-bottom: 20px;
-        }
-        h1 { margin: 0; font-size: 1.5rem; color: var(--primary); }
-        #status { font-size: 0.8rem; color: #22c55e; }
-        
-        #feed {
+            font-family: 'IBM Plex Mono', monospace;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            max-width: 800px;
-            margin: 0 auto;
+            overflow: hidden;
+            position: relative;
         }
-        
-        .issue-card {
-            background: var(--card);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border: 1px solid #334155;
-            animation: slideIn 0.3s ease-out;
+
+        /* CRT Scanline Effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 1000;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
         }
-        
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .issue-header {
+
+        header {
+            height: 60px;
+            border-bottom: 2px solid var(--border);
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            margin-bottom: 10px;
+            padding: 0 20px;
+            background: var(--surface);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            z-index: 10;
         }
-        
-        .lang-tag {
-            background: #334155;
-            padding: 2px 8px;
+
+        .brand {
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary-glow);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            border: 1px solid var(--primary-dim);
             border-radius: 4px;
             font-size: 0.7rem;
             text-transform: uppercase;
         }
-        
-        .issue-title {
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: var(--text);
-            display: block;
-            margin-top: 5px;
-        }
-        
-        .issue-orig {
-            font-style: italic;
-            color: var(--dim);
-            font-size: 0.9rem;
-            margin-bottom: 15px;
-        }
-        
-        .issue-body {
-            line-height: 1.5;
-            white-space: pre-wrap;
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 4px;
-            font-size: 0.95rem;
-        }
-        
-        .issue-meta {
-            margin-top: 15px;
-            font-size: 0.8rem;
-            color: var(--dim);
-            display: flex;
-            justify-content: space-between;
+
+        .main-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            overflow: hidden;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 100px 20px;
-            color: var(--dim);
+        /* Sidebar Stats */
+        aside {
+            border-right: 2px solid var(--border);
+            background: var(--surface);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            overflow-y: auto;
         }
+
+        .stat-section h3 {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            padding: 6px 10px;
+            border-radius: 4px;
+            background: var(--surface-bright);
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .stat-item:hover {
+            border-color: var(--primary-dim);
+            background: var(--primary-dim);
+        }
+
+        .stat-val { color: var(--primary); font-weight: 600; }
+
+        /* Main Feed */
+        #feed-view {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: radial-gradient(circle at center, #0a0d0a 0%, #050705 100%);
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 20px;
+            position: relative;
+            transition: transform 0.2s;
+            animation: bootIn 0.4s ease-out;
+        }
+
+        @keyframes bootIn {
+            from { opacity: 0; transform: scale(0.98); filter: blur(4px); }
+            to { opacity: 1; transform: scale(1); filter: blur(0); }
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .card.reply::before {
+            background: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+
+        .card-body {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text);
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+
+        .card-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .card-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Footer Playground */
+        footer {
+            height: 100px;
+            border-top: 2px solid var(--border);
+            background: var(--surface);
+            padding: 15px 40px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .play-input {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 12px;
+            color: var(--primary);
+            font-family: inherit;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .play-input:focus { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-dim); }
+
+        .btn-play {
+            padding: 12px 24px;
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .btn-play:hover { background: var(--text-dim); box-shadow: 0 0 15px var(--primary-glow); }
+
+        .empty-state {
+            margin: auto;
+            text-align: center;
+            color: var(--border2);
+            opacity: 0.5;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
     </style>
 </head>
 <body>
     <header>
-        <h1>ContribBridge Live Feed</h1>
-        <div id="status">● Connected</div>
+        <div class="brand">
+            <span style="font-size: 1.5rem">🌉</span>
+            CONTRIBBRIDGE / CONTROL_CENTER
+        </div>
+        <div id="status-pill">
+            <span id="dot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger)"></span>
+            <span id="status-text">OFFLINE</span>
+        </div>
     </header>
 
-    <div id="feed">
-        <div class="empty-state">Waiting for GitHub issues...</div>
+    <div class="main-container">
+        <aside>
+            <div class="stat-section">
+                <h3><span style="font-size: 1rem">📦</span> Repositories</h3>
+                <ul class="stat-list" id="repo-list">
+                    <li class="empty-state" style="padding: 10px 0; font-size: 0.8rem">No data...</li>
+                </ul>
+            </div>
+            <div class="stat-section">
+                <h3><span style="font-size: 1rem">🌐</span> Languages</h3>
+                <ul class="stat-list" id="lang-list">
+                    <li class="empty-state" style="padding: 10px 0; font-size: 0.8rem">No data...</li>
+                </ul>
+            </div>
+        </aside>
+
+        <section id="feed-view">
+            <div class="empty-state">WAITING_FOR_UPLINK...</div>
+        </section>
     </div>
 
+    <footer>
+        <span style="font-size: 0.7rem; color: var(--text-dim)">PLAYGROUND:</span>
+        <input type="text" id="playground" class="play-input" placeholder="Paste non-English text to test translation logic...">
+        <button class="btn-play" onclick="simulate()">TRANSLATE</button>
+    </footer>
+
     <script>
-        const feed = document.getElementById('feed');
-        const status = document.getElementById('status');
-        
-        // Connect to WebSocket feed
-        const ws = new WebSocket(`ws://${location.host}/feed`);
+        const feed = document.getElementById('feed-view');
+        const repoList = document.getElementById('repo-list');
+        const langList = document.getElementById('lang-list');
+        const dot = document.getElementById('dot');
+        const statusText = document.getElementById('status-text');
+
+        // Dynamic WebSocket URL
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${protocol}//${window.location.host}/feed`);
 
         ws.onopen = () => {
-            status.textContent = '● Connected';
-            status.style.color = '#22c55e';
+            dot.style.background = '#39ff7a';
+            dot.style.boxShadow = '0 0 10px #39ff7a';
+            statusText.textContent = 'CONNECTED / LIVE';
         };
 
         ws.onclose = () => {
-            status.textContent = '○ Disconnected';
-            status.style.color = '#ef4444';
-            setTimeout(() => location.reload(), 3000);
+            dot.style.background = '#ef4444';
+            statusText.textContent = 'DISCONNECTED';
+            setTimeout(() => window.location.reload(), 5000);
         };
 
         ws.onmessage = (event) => {
             const { type, data } = JSON.parse(event.data);
+            
+            if (type === 'history') {
+                feed.innerHTML = '';
+                if (data.history.length === 0) {
+                    feed.innerHTML = '<div class="empty-state">DATABASE_EMPTY / WAITING_FOR_TRAFFIC</div>';
+                }
+                data.history.reverse().forEach(issue => renderIssue(issue));
+                updateStats(data.repoStats, data.langStats);
+            }
+
             if (type === 'issue') {
-                removeEmptyState();
-                renderIssueCard(data);
-            } else if (type === 'comment') {
-                removeEmptyState();
-                renderCommentCard(data);
+                renderIssue(data);
+            }
+
+            if (type === 'comment') {
+                renderComment(data);
+            }
+
+            if (type === 'stats') {
+                updateStats(data.repoStats, data.langStats);
+            }
+
+            if (type === 'playground_result') {
+                renderPlaygroundResult(data);
             }
         };
 
-        function removeEmptyState() {
+        function renderIssue(issue) {
+            removeEmpty();
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.innerHTML = `
+                <div class="card-header">
+                    <span>ISSUE #${issue.number} // ${issue.detectedLocale.toUpperCase()} → EN</span>
+                    <span>${new Date(issue.timestamp).toLocaleTimeString()}</span>
+                </div>
+                <div class="card-title">${escape(issue.translatedTitle)}</div>
+                <div class="card-body">${escape(issue.translatedBody)}</div>
+                <div class="card-meta">
+                    <span><strong>REPO:</strong> ${issue.repo}</span>
+                    <span><strong>CONF:</strong> ${issue.confidence || 98}%</span>
+                </div>
+            `;
+            feed.prepend(div);
+        }
+
+        function renderComment(comment) {
+            removeEmpty();
+            const div = document.createElement('div');
+            div.className = 'card reply';
+            div.innerHTML = `
+                <div class="card-header">
+                    <span>REPLY // EN → ${comment.locale.toUpperCase()}</span>
+                    <span>${new Date(comment.timestamp).toLocaleTimeString()}</span>
+                </div>
+                <div class="card-title">Translated Response</div>
+                <div class="card-body">${escape(comment.translatedBody)}</div>
+                <div class="card-meta">
+                    <span><strong>REPO:</strong> ${comment.repo}</span>
+                    <span><strong>AUTHOR:</strong> @${comment.author}</span>
+                </div>
+            `;
+            feed.prepend(div);
+        }
+
+        function renderPlaygroundResult(data) {
+            removeEmpty();
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.style.borderColor = '#fbbf24'; // Yellow border for playground
+            div.innerHTML = `
+                <div class="card-header">
+                    <span style="color: #fbbf24">PLAYGROUND_TEST // MANUAL_UPLINK</span>
+                    <span>${new Date(data.timestamp).toLocaleTimeString()}</span>
+                </div>
+                <div class="card-title" style="font-size: 0.8rem; color: #6b7280; font-style: italic">Original: ${escape(data.original)}</div>
+                <div class="card-body" style="border-left-color: #fbbf24">${escape(data.translated)}</div>
+                <div class="card-meta">
+                    <span><strong>SOURCE:</strong> MAN_INPUT</span>
+                    <span style="color: #fbbf24"><strong>STATUS:</strong> SIMULATED</span>
+                </div>
+            `;
+            feed.prepend(div);
+        }
+
+        function updateStats(repos, langs) {
+            repoList.innerHTML = repos.map(r => `
+                <li class="stat-item">
+                    <span>${r.repo}</span>
+                    <span class="stat-val">${r.count}</span>
+                </li>
+            `).join('') || '<li class="empty-state">No repos...</li>';
+
+            langList.innerHTML = langs.map(l => `
+                <li class="stat-item">
+                    <span>${l.lang.toUpperCase()}</span>
+                    <span class="stat-val">${l.count}</span>
+                </li>
+            `).join('') || '<li class="empty-state">No langs...</li>';
+        }
+
+        function removeEmpty() {
             const empty = feed.querySelector('.empty-state');
             if (empty) empty.remove();
         }
 
-        function renderIssueCard(issue) {
-            const card = document.createElement('div');
-            card.className = 'issue-card';
-            card.innerHTML = `
-                <div class="issue-header">
-                    <span class="lang-tag">${issue.detectedLocale} → EN</span>
-                    <span style="font-size: 0.8rem; color: var(--dim)">#${issue.number}</span>
-                </div>
-                <span class="issue-title">${escapeHtml(issue.translatedTitle)}</span>
-                <div class="issue-orig">Original: ${escapeHtml(issue.originalTitle)}</div>
-                <div class="issue-body">${escapeHtml(issue.translatedBody)}</div>
-                <div class="issue-meta">
-                    <span>@${issue.author} · ${issue.repo}</span>
-                    <span>${issue.confidence}% confidence · ${issue.translationMs}ms</span>
-                </div>
-            `;
-            feed.prepend(card);
+        function escape(str) {
+            if (!str) return '';
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
         }
 
-        function renderCommentCard(comment) {
-            const card = document.createElement('div');
-            card.className = 'issue-card';
-            card.style.borderLeft = '4px solid var(--primary)';
-            card.innerHTML = `
-                <div class="issue-header">
-                    <span class="lang-tag" style="background:var(--primary); color:var(--bg)">REPLY: EN → ${comment.locale}</span>
-                    <span style="font-size: 0.8rem; color: var(--dim)">#${comment.issueNumber}</span>
-                </div>
-                <div class="issue-orig">Replied by @${comment.author}</div>
-                <div class="issue-body">${escapeHtml(comment.translatedBody)}</div>
-                <div class="issue-meta">
-                    <span>${comment.repo}</span>
-                    <span>${new Date(comment.timestamp).toLocaleTimeString()}</span>
-                </div>
-            `;
-            feed.prepend(card);
-        }
+        async function simulate() {
+            const input = document.getElementById('playground');
+            const btn = document.querySelector('.btn-play');
+            const text = input.value;
+            
+            if (!text || btn.disabled) return;
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+            btn.disabled = true;
+            btn.textContent = 'THINKING...';
+            input.disabled = true;
+
+            try {
+                const res = await fetch('/api/playground', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Uplink failure');
+                }
+
+                input.value = '';
+                input.placeholder = 'TRANSLATION_SUCCESSFUL // READY_FOR_NEXT';
+            } catch (err) {
+                input.value = '';
+                input.placeholder = `ERROR: ${err.message.toUpperCase()}`;
+            } finally {
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = 'TRANSLATE';
+                    input.disabled = false;
+                    if (!input.value) input.placeholder = 'Paste non-English text to test translation logic...';
+                }, 2000);
+            }
         }
     </script>
 </body>

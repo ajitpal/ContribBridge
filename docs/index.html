@@ -814,7 +814,7 @@ footer{
     <a class="nav-link" href="#setup">Setup</a>
     <a class="nav-link" href="#demo">Live Feed</a>
     <a class="nav-link" href="#arch">How it works</a>
-    <a class="nav-link" href="#pricing">Pricing</a>
+    <a class="nav-link" href="/dashboard" target="_blank">Dashboard</a>
     <div class="nav-npm" onclick="copyInstall()">
       $ npx contribbridge init
       <span style="color:#7aaa76">⎘</span>
@@ -1150,59 +1150,6 @@ footer{
   </div>
 </section>
 
-<!-- OPEN CORE SECTION -->
-<section class="setup reveal" id="pricing" style="margin-top:0;padding-top:80px;padding-bottom:80px;background:var(--surface);border-top:1px solid var(--border)">
-  <div class="section-label">// open core model</div>
-  <h2 class="section-h">Free for open source.<br/><em style="font-family:'Instrument Serif',serif;font-style:italic;color:var(--green)">Paid for private.</em></h2>
-  <p class="section-sub">The same model used by GitLab, PostHog, and Vercel. The translation engine is forever free for public repos. Private repos, analytics, and enterprise controls are paid.</p>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:820px">
-    <!-- Community -->
-    <div style="background:var(--surface2);padding:28px 24px">
-      <div style="font-size:.6rem;color:var(--green);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;font-family:'IBM Plex Mono',monospace">✦ Community Edition</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#fff;letter-spacing:1px;margin-bottom:4px">ContribBridge Community</div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:1.8rem;color:var(--green);margin-bottom:14px">$0 <span style="font-size:.72rem;color:#8aaa86;font-family:'IBM Plex Mono',monospace">/ forever</span></div>
-      <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:20px">
-        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--green)">✓</span>Unlimited public repos</div>
-        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--green)">✓</span>All 5 Lingo.dev SDK methods</div>
-        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--green)">✓</span>87 languages · bidirectional</div>
-        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--green)">✓</span>Live WebSocket dashboard</div>
-        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--green)">✓</span>10,000 words / month</div>
-        <div style="font-size:.72rem;color:#5a7856;display:flex;gap:7px"><span>—</span>Private repos</div>
-        <div style="font-size:.72rem;color:#5a7856;display:flex;gap:7px"><span>—</span>Analytics &amp; reporting</div>
-      </div>
-      <div onclick="copyInstall()" style="display:block;width:100%;padding:10px;border-radius:5px;background:rgba(57,255,122,.1);border:1px solid rgba(57,255,122,.25);color:var(--green);font-size:.75rem;font-weight:600;text-align:center;cursor:pointer;transition:all .15s;font-family:'IBM Plex Mono',monospace" onmouseover="this.style.background='rgba(57,255,122,.18)'" onmouseout="this.style.background='rgba(57,255,122,.1)'">npx contribbridge init →</div>
-    </div>
-    <!-- Pro -->
-    <div style="background:linear-gradient(160deg,var(--surface2) 0%,rgba(57,255,122,.04) 100%);padding:28px 24px;border-left:1px solid var(--border);position:relative">
-      <div style="font-size:.55rem;text-transform:uppercase;letter-spacing:1px;padding:2px 8px;border-radius:3px;background:rgba(57,255,122,.1);border:1px solid rgba(57,255,122,.2);color:var(--green);font-weight:600;position:absolute;top:14px;right:14px;font-family:'IBM Plex Mono',monospace">Most Popular</div>
-      <div style="font-size:.6rem;color:var(--amber);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;font-family:'IBM Plex Mono',monospace">★ Pro / Enterprise</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#fff;letter-spacing:1px;margin-bottom:4px">ContribBridge Pro</div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:1.8rem;color:var(--amber);margin-bottom:14px">$12 <span style="font-size:.72rem;color:#8aaa86;font-family:'IBM Plex Mono',monospace">/ repo / month</span></div>
-      <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:20px">
-        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>Private + public repos</div>
-        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>500k words / month</div>
-        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>Priority translation queue</div>
-        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>Analytics dashboard (30-day)</div>
-        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>Custom Lingo.dev glossaries</div>
-        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>RS256 JWT license · offline verify</div>
-        <div style="font-size:.72rem;color:var(--text);display:flex;gap:7px"><span style="color:var(--amber)">★</span>99.9% SLA + Slack support</div>
-      </div>
-      <div onclick="showToast('⭐','14-day free trial started — no card required')" style="display:block;width:100%;padding:10px;border-radius:5px;background:var(--amber);border:none;color:#000;font-size:.75rem;font-weight:700;text-align:center;cursor:pointer;transition:all .15s;font-family:'IBM Plex Mono',monospace" onmouseover="this.style.boxShadow='0 0 20px rgba(255,179,71,.35)'" onmouseout="this.style.boxShadow='none'">Start 14-day free trial →</div>
-    </div>
-  </div>
-
-  <!-- Gate rule -->
-  <div style="margin-top:20px;max-width:820px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:14px 18px;display:flex;align-items:center;gap:16px;font-size:.72rem;font-family:'IBM Plex Mono',monospace">
-    <span style="color:var(--green);font-size:.8rem">🔓</span>
-    <span style="color:var(--green)">Public repo</span>
-    <span style="color:#5a7856">→ always passes, no license check</span>
-    <span style="margin-left:auto;color:#5a7856">|</span>
-    <span style="color:var(--amber)">🔒</span>
-    <span style="color:var(--amber)">Private repo</span>
-    <span style="color:#5a7856">→ requires CONTRIBBRIDGE_LICENSE_KEY in .env</span>
-  </div>
-</section>
 
 <!-- FOOTER -->
 <footer>
@@ -1211,7 +1158,7 @@ footer{
     <a href="https://github.com/ajitpal/ContribBridge" target="_blank">GitHub</a>
     <a href="https://ajitpal.github.io/contribbridge/" target="_blank">Live Demo</a>
     <a href="#setup">Docs</a>
-    <a href="#pricing">Pricing</a>
+    <a href="/dashboard" target="_blank">Dashboard</a>
   </div>
   <div class="footer-right">Apache 2.0 · Powered by <span style="color:var(--green)">Lingo.dev</span> · Hackathon 2026</div>
 </footer>
