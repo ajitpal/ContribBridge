@@ -180,8 +180,14 @@ app.post('/api/connect', async (req, res) => {
     });
   } catch (err) {
     console.error(`[Connector] Failed to connect ${repo}:`, err.message);
+    
+    let errorMessage = 'Connection failed';
+    if (err.status === 404) errorMessage = 'Repository not found';
+    if (err.code === 'NOPERM') errorMessage = 'Admin permissions required on GitHub';
+    
     res.status(err.status || 500).json({ 
-      error: err.status === 404 ? 'Repository not found' : 'Connection failed' 
+      error: errorMessage,
+      isPrivate: err.isPrivate || false
     });
   }
 });

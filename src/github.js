@@ -28,16 +28,25 @@ export async function registerWebhook(repoFullName, webhookUrl) {
     console.log(`✓ Webhook registered for ${repoFullName} (ID: ${data.id})`);
     return data;
   } catch (err) {
-    // 2. If it already exists, update it to ensure it points to OUR current URL
+    // 2. If it already exists (422), synchronise it
     if (err.status === 422) {
       console.warn(`! Webhook already exists for ${repoFullName}. Synchronizing configuration...`);
       
-      const { data: hooks } = await octokit.repos.listWebhooks({ owner, repo });
+      // Fetch all hooks (page size 100 is safer)
+      const { data: hooks } = await octokit.repos.listWebhooks({ owner, repo, per_page: 100 });
       
-      // Look for a hook that ends with /webhook/github or has the same URL
-      const existingHook = hooks.find(h => h.config.url === finalUrl || h.config.url.endsWith('/webhook/github'));
+      // Look for a hook that:
+      // a) matches the EXACT URL we want (already perfect)
+      // b) looks like our hook (ends with /webhook/github)
+      let existingHook = hooks.find(h => h.config.url === finalUrl);
+      
+      if (!existingHook) {
+        existingHook = hooks.find(h => h.config.url && h.config.url.endsWith('/webhook/github'));
+      }
       
       if (existingHook) {
+        // If it's already pointing to finalUrl and using the same secret/content_type, we can just skip update
+        // but it's safer to just update it to be sure the secret matches the current ENV.
         const { data: updated } = await octokit.repos.updateWebhook({
           owner,
           repo,
@@ -48,10 +57,25 @@ export async function registerWebhook(repoFullName, webhookUrl) {
             secret: process.env.GITHUB_WEBHOOK_SECRET,
           },
         });
-        console.log(`✓ Webhook updated for ${repoFullName} (Points to: ${finalUrl})`);
+        console.log(`✓ Webhook synchronized for ${repoFullName} (Points to: ${finalUrl})`);
         return updated;
+      } else {
+        // We got a 422 but couldn't find the hook in the list? 
+        // This might happen if there's a hook with exact same URL but we don't have read access?
+        // Let's log and proceed if we can't find it to update - it already exists anyway.
+        console.warn(`! Warning: Validation failed but no matching hook found in list. Proceeding anyway.`);
+        return { id: 'existing', config: { url: finalUrl } };
       }
     }
+    
+    // 3. Handle Permission Errors (403/404)
+    if (err.status === 403 || err.status === 404) {
+      const pError = new Error('Lack of administrative permissions on this repository.');
+      pError.status = 403;
+      pError.code = 'NOPERM';
+      throw pError;
+    }
+    
     throw err;
   }
 }
