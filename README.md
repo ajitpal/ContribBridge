@@ -64,7 +64,23 @@ contribbridge/
 ├── keys/               # RS256 Keypair for offline licensing
 └── .env.example        # Environment template
 ```
-## 🚀 Quick Start
+
+## 🚀 Quick Start 
+
+If you are deploying to a server (e.g., Railway, Heroku, AWS):
+
+```bash
+# 1. Install & Initialize
+npx contribbridge init  # Prompts for API Keys & sets up .env
+
+# 2. Connect your Repository
+npx contribbridge connect --repo your-org/your-repo
+
+# 3. Start Watching
+npx contribbridge watch  # Starts the translation server + dashboard
+```
+
+## 🚀 Quick Start (Local)
 
 Get up and running in less than 60 seconds.
 
@@ -78,6 +94,7 @@ npx . connect --repo your-org/your-repo
 # 3. Start Watching
 npx . watch  # Starts the translation server + dashboard
 ```
+
 
 ## 🚀 Local Development & Testing
 

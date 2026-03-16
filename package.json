@@ -1,8 +1,23 @@
 {
   "name": "contribbridge",
-  "version": "1.1.0",
+  "version": "1.2.2",
+  "description": "Translate every GitHub issue in real-time using Lingo.dev SDK — bidirectionally, across 87 languages.",
   "type": "module",
   "license": "Apache-2.0",
+  "author": "Ajit Kumar Pal",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ajitpal/ContribBridge.git"
+  },
+  "keywords": [
+    "github",
+    "translation",
+    "lingo",
+    "localization",
+    "webhook",
+    "automation",
+    "inclusive-coding"
+  ],
   "files": [
     "bin",
     "src",
@@ -10,7 +25,8 @@
     "docs",
     "keys",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    ".env.example"
   ],
   "bin": {
     "contribbridge": "./bin/cli.js"
@@ -29,6 +45,7 @@
     "lingo.dev": "latest",
     "marked": "^9.0.0",
     "node-cache": "^5.1.0",
+    "smee-client": "^2.0.4",
     "turndown": "^7.0.0",
     "ws": "^8.0.0"
   }
