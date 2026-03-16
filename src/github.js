@@ -98,13 +98,19 @@ export async function postTranslation(repo, issueNumber, data) {
 }
 
 /**
- * Post a translated reply (English maintainer -> contributor locale) back to GitHub.
+ * Post a translated reply back to GitHub. Handles both directions:
+ * - Contributor comment (non-English → English): "Translated from `locale`"
+ * - Maintainer reply (English → contributor locale): "Translated into `locale`"
  */
-export async function postReplyTranslation(repo, issueNumber, { locale, originalBody, translatedBody, author }) {
+export async function postReplyTranslation(repo, issueNumber, { locale, originalBody, translatedBody, author, direction }) {
   const [owner, repoName] = repo.full_name.split('/');
   
+  const dirLabel = direction === 'to-english'
+    ? `Translated from \`${locale}\``
+    : `Translated for @${author} into \`${locale}\``;
+  
   const body = [
-    `> 🌎 **ContribBridge** · Translated for @${author} into \`${locale}\``,
+    `> 🌎 **ContribBridge** · ${dirLabel}`,
     `> Original: _"${originalBody.length > 50 ? originalBody.substring(0, 47) + '...' : originalBody}"_`,
     '',
     translatedBody,

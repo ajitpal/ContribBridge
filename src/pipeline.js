@@ -125,77 +125,120 @@ export async function processIssue(issue, repo) {
 
 // ─── Process a new comment (bidirectional translation) ───────────
 /**
- * When a maintainer replies in English, translate the reply back to
- * the contributor's original language and post it as a follow-up comment.
+ * Bidirectional comment translation:
+ *  A) Contributor comments in non-English → translate to English
+ *  B) Maintainer replies in English → translate back to contributor's language
  */
 export async function processComment(comment, issue, repo) {
   try {
     // 1. Skip bot comments to avoid infinite loops
-    // GitHub Apps have type 'Bot'; PATs have type 'User'
-    if (comment.user.type === 'Bot') return;
+    if (comment.user.type === 'Bot') {
+      console.log(`[Comment] Skipping bot comment #${comment.id}`);
+      return;
+    }
     
     // 2. Strict brand check: ignore any comment containing our signature
     if (comment.body.includes('ContribBridge')) {
+      console.log(`[Comment] Skipping our own translated comment #${comment.id}`);
       return;
     }
 
-    // 3. Skip if the comment is from the issue author (contributor)
-    // We only want to translate replies from maintainers BACK to the contributor.
-    if (comment.user.id === issue.user.id) {
+    // 3. Dedup check
+    if (cache.has(`comment:${comment.id}`)) {
+      console.log(`[Comment] Skipping duplicate comment #${comment.id}`);
       return;
     }
 
-    // Dedup check
-    if (cache.has(`comment:${comment.id}`)) return;
-
-    // Detect language of the comment
+    // 4. Detect language of the comment
     const { locale: commentLocale, isEnglish: commentIsEnglish } =
       await detectLanguage(comment.body);
 
-    // We only translate English comments back to the issue author's language
-    if (!commentIsEnglish) return;
+    const isContributor = comment.user.id === issue.user.id;
 
-    // Look up the original issue's detected locale from the DB
+    // 5. Look up the original issue's detected locale from the DB
     const issueRecord = db
       .prepare('SELECT locale FROM issues WHERE id = ?')
       .get(issue.id);
 
-    if (!issueRecord || issueRecord.locale === 'en') return;
+    // ─── Path A: Contributor follow-up comment (non-English → English) ───
+    if (isContributor && !commentIsEnglish) {
+      console.log(`[Comment] Translating contributor comment on #${issue.number} (${commentLocale} → en)`);
 
-    const targetLocale = issueRecord.locale;
+      const translatedReply = await translateReply(comment.body, 'en', commentLocale);
 
-    // Translate the English reply back to the contributor's language
-    const translatedReply = await translateReply(comment.body, targetLocale);
-
-    // Post translated reply back to GitHub
-    await postReplyTranslation(repo, issue.number, {
-      locale: targetLocale,
-      originalBody: comment.body,
-      translatedBody: translatedReply,
-      author: comment.user.login,
-    });
-
-    // Broadcast to live dashboard
-    broadcast({
-      type: 'comment',
-      data: {
-        id: comment.id,
-        issueNumber: issue.number,
-        repo: repo.full_name,
-        author: comment.user.login,
+      await postReplyTranslation(repo, issue.number, {
+        locale: commentLocale,
         originalBody: comment.body,
         translatedBody: translatedReply,
+        author: comment.user.login,
+        direction: 'to-english',
+      });
+
+      broadcast({
+        type: 'comment',
+        data: {
+          id: comment.id,
+          issueNumber: issue.number,
+          repo: repo.full_name,
+          author: comment.user.login,
+          originalBody: comment.body,
+          translatedBody: translatedReply,
+          direction: `${commentLocale} → en`,
+          locale: commentLocale,
+          timestamp: new Date().toISOString(),
+        },
+      });
+      broadcastStats();
+      cache.set(`comment:${comment.id}`, true, 3600);
+
+      console.log(`✓ Translated contributor comment on #${issue.number} (${commentLocale} → en)`);
+      return;
+    }
+
+    // ─── Path B: Maintainer reply in English → contributor's language ────
+    if (!isContributor && commentIsEnglish) {
+      if (!issueRecord || issueRecord.locale === 'en') {
+        console.log(`[Comment] Skipping English reply on #${issue.number} — original issue is English or not tracked`);
+        return;
+      }
+
+      const targetLocale = issueRecord.locale;
+      console.log(`[Comment] Translating maintainer reply on #${issue.number} (en → ${targetLocale})`);
+
+      const translatedReply = await translateReply(comment.body, targetLocale);
+
+      await postReplyTranslation(repo, issue.number, {
         locale: targetLocale,
-        timestamp: new Date().toISOString()
-      },
-    });
-    broadcastStats();
+        originalBody: comment.body,
+        translatedBody: translatedReply,
+        author: comment.user.login,
+        direction: 'to-contributor',
+      });
 
-    cache.set(`comment:${comment.id}`, true, 3600);
+      broadcast({
+        type: 'comment',
+        data: {
+          id: comment.id,
+          issueNumber: issue.number,
+          repo: repo.full_name,
+          author: comment.user.login,
+          originalBody: comment.body,
+          translatedBody: translatedReply,
+          direction: `en → ${targetLocale}`,
+          locale: targetLocale,
+          timestamp: new Date().toISOString(),
+        },
+      });
+      broadcastStats();
+      cache.set(`comment:${comment.id}`, true, 3600);
 
-    console.log(
-      `✓ Translated reply on issue #${issue.number} (en → ${targetLocale})`
-    );
+      console.log(`✓ Translated maintainer reply on #${issue.number} (en → ${targetLocale})`);
+      return;
+    }
+
+    // ─── No translation needed ───────────────────────────────────────
+    console.log(`[Comment] No translation needed for comment #${comment.id} on #${issue.number} (contributor=${isContributor}, english=${commentIsEnglish})`);
+
   } catch (err) {
     console.error(`Pipeline error for comment #${comment?.id}:`, err);
   }

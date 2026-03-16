@@ -59,12 +59,13 @@ export async function detectLanguage(text) {
 export async function translateIssue({ title, body, detectedLocale }) {
   const engine = lingo ?? (await initLingo());
   const td = new TurndownService();
+  const targetLocale = process.env.TARGET_LOCALE || 'en';
 
   // --- Title ---
   const translatedTitle = await safeTranslate(
     () => engine.localizeText(title, {
       sourceLocale: detectedLocale,
-      targetLocale: 'en',
+      targetLocale,
     }),
     title
   );
@@ -77,7 +78,7 @@ export async function translateIssue({ title, body, detectedLocale }) {
     const translatedHtml = await safeTranslate(
       () => engine.localizeHtml(bodyHtml, {
         sourceLocale: detectedLocale,
-        targetLocale: 'en',
+        targetLocale,
       }),
       bodyHtml
     );
@@ -93,11 +94,11 @@ export async function translateIssue({ title, body, detectedLocale }) {
  * Translate a single maintainer reply from English back to the
  * contributor's language.
  */
-export async function translateReply(text, targetLocale) {
+export async function translateReply(text, targetLocale, sourceLocale = 'en') {
   const engine = lingo ?? (await initLingo());
   return await safeTranslate(
     () => engine.localizeText(text, {
-      sourceLocale: 'en',
+      sourceLocale,
       targetLocale,
     }),
     text
@@ -127,12 +128,12 @@ export async function translateGenericText(text, targetLocale = 'en') {
  * Translate an entire comment thread from EN back to the
  * contributor's locale. Preserves author names.
  */
-export async function translateThread(messages, targetLocale) {
+export async function translateThread(messages, targetLocale, sourceLocale = 'en') {
   const engine = lingo ?? (await initLingo());
   return await safeTranslate(
     () => engine.localizeChat(
       messages.map((m) => ({ name: m.author, text: m.body })),
-      { sourceLocale: 'en', targetLocale }
+      { sourceLocale, targetLocale }
     ),
     messages.map(m => m.body).join('\n')
   );
