@@ -26,6 +26,19 @@
   --muted2:   #5a7856;   /* was #2e3d2c — now readable secondary text */
 }
 
+body.light-theme {
+  --bg:       #ffffff;
+  --surface:  #f6f8fa;
+  --surface2: #ebeff2;
+  --border:   #d0d7de;
+  --border2:  #afb8c1;
+  --green:    #117131;
+  --text:     #24292f;
+  --muted:    #57606a;
+  --muted2:   #6e7781;
+  --dim:      rgba(17,113,49,0.05);
+}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 html{scroll-behavior:smooth}
@@ -73,7 +86,7 @@ body::before{
   text-shadow:0 0 20px rgba(57,255,122,0.4);
 }
 
-.nav-right{display:flex;align-items:center;gap:20px}
+.nav-right{display:flex;align-items:center;gap:15px}
 
 .nav-link{
   font-size:0.72rem;color:var(--muted);
@@ -93,6 +106,24 @@ body::before{
   cursor:pointer;
   transition:all .15s;
 }
+
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+.theme-toggle:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
 .nav-npm span{color:var(--muted)!important}
 .nav-npm:hover{background:rgba(57,255,122,0.12);box-shadow:0 0 16px rgba(57,255,122,0.15)}
 
@@ -847,6 +878,7 @@ footer{
 <nav class="nav">
   <div class="nav-logo">🌉 ContribBridge</div>
   <div class="nav-right">
+    <button class="theme-toggle" id="theme-link" title="Toggle Light/Dark Mode">🌓</button>
     <a class="nav-link" href="#setup">Setup</a>
     <a class="nav-link" href="#demo">Live Feed</a>
     <a class="nav-link" href="#arch">How it works</a>
@@ -1461,6 +1493,24 @@ document.querySelectorAll('.reveal').forEach(el=> revealObs.observe(el));
 initHeroFeed();
 setTimeout(initTermFeed, 300);
 setTimeout(()=> showToast('🌐','ContribBridge demo loaded — Lingo.dev SDK connected'), 1200);
+</script>
+<script>
+  // Theme Toggle
+  const themeLink = document.getElementById('theme-link');
+  themeLink.onclick = () => {
+    document.body.classList.toggle('light-theme');
+    localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+  };
+  if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-theme');
+
+  // Existing interactions...
+  function copyNpm() {
+    navigator.clipboard.writeText('npx contribbridge watch');
+    const b = document.querySelector('.nav-npm span');
+    const old = b.textContent;
+    b.textContent = 'COPIED!';
+    setTimeout(()=>b.textContent=old, 2000);
+  }
 </script>
 </body>
 </html>

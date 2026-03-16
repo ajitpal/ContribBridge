@@ -32,6 +32,15 @@ export function initDashboard(httpServer) {
         LIMIT 20
       `).all();
 
+      const commentHistory = db.prepare(`
+        SELECT id, repo, issue_number as issueNumber, author, 
+               original_body as originalBody, translated_body as translatedBody, 
+               direction, locale, created_at as timestamp, comment_url as commentUrl
+        FROM comments
+        ORDER BY created_at DESC
+        LIMIT 100
+      `).all();
+
       // Get global health (average confidence)
       const health = db.prepare(`
         SELECT AVG(confidence) as avgConf, COUNT(*) as total 
@@ -59,6 +68,7 @@ export function initDashboard(httpServer) {
         type: 'history',
         data: {
           history,
+          commentHistory,
           repoStats,
           langStats,
           health: {

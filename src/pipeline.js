@@ -232,6 +232,23 @@ export async function processComment(comment, issue, repo) {
       });
 
       console.log(`✓ Translated comment on #${issue.number} (${commentLocale} → ${tl})`);
+
+      // Persist comment to DB for dashboard history/threading
+      db.prepare(`
+        INSERT OR REPLACE INTO comments (id, repo, issue_number, author, original_body, translated_body, direction, locale, comment_url, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        comment.id,
+        repo.full_name,
+        issue.number,
+        comment.user.login,
+        comment.body,
+        translatedReply,
+        direction,
+        tl,
+        comment.html_url,
+        new Date().toISOString()
+      );
     }
 
     broadcastStats();

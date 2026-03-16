@@ -55,6 +55,19 @@ db.exec(`
     PRIMARY KEY (repo, target_locale),
     FOREIGN KEY (repo) REFERENCES watched_repos(repo)
   );
+
+  CREATE TABLE IF NOT EXISTS comments (
+    id            INTEGER PRIMARY KEY,
+    repo          TEXT    NOT NULL,
+    issue_number  INTEGER NOT NULL,
+    author        TEXT    NOT NULL,
+    original_body TEXT,
+    translated_body TEXT,
+    direction     TEXT, -- 'to-maintainer' or 'to-contributor'
+    locale        TEXT,
+    comment_url   TEXT,
+    created_at    TEXT    NOT NULL
+  );
 `);
 
 export default db;
