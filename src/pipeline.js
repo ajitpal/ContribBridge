@@ -170,62 +170,49 @@ export async function processComment(comment, issue, repo) {
     const issueRecord = db
       .prepare('SELECT locale FROM issues WHERE id = ?')
       .get(issue.id);
+    const issueOriginalLocale = issueRecord ? issueRecord.locale : null;
 
-    // ─── Path A: Comment NOT in any target locale → translate to all target locales ───
-    if (!isInTargetLocale) {
-      const localesToTranslate = targetLocales.filter(
-        tl => tl !== commentLocale && !commentLocale.startsWith(tl + '-')
-      );
+    // ─── Unified Multi-Locale Translation Logic ───
+    // We want to translate this comment so that:
+    // 1. All maintainers can read it (add all targetLocales)
+    // 2. The original issue contributor can read it (add issueOriginalLocale)
+    const neededLocales = new Set(targetLocales);
+    if (issueOriginalLocale) {
+      neededLocales.add(issueOriginalLocale);
+    }
 
-      for (const tl of localesToTranslate) {
-        console.log(`[Comment] Translating comment on #${issue.number} (${commentLocale} → ${tl})`);
-
-        const translatedReply = await translateReply(comment.body, tl, commentLocale);
-
-        await postReplyTranslation(repo, issue.number, {
-          locale: commentLocale,
-          originalBody: comment.body,
-          translatedBody: translatedReply,
-          author: comment.user.login,
-          direction: 'to-english',
-        });
-
-        broadcast({
-          type: 'comment',
-          data: {
-            id: comment.id,
-            issueNumber: issue.number,
-            repo: repo.full_name,
-            author: comment.user.login,
-            originalBody: comment.body,
-            translatedBody: translatedReply,
-            direction: `${commentLocale} → ${tl}`,
-            locale: commentLocale,
-            timestamp: new Date().toISOString(),
-          },
-        });
-
-        console.log(`✓ Translated comment on #${issue.number} (${commentLocale} → ${tl})`);
+    // 3. Subtract the language the comment is already written in
+    neededLocales.delete(commentLocale);
+    for (const loc of neededLocales) {
+      if (commentLocale.startsWith(loc + '-')) {
+        neededLocales.delete(loc);
       }
+    }
 
-      broadcastStats();
-      cache.set(`comment:${comment.id}`, true, 3600);
+    if (neededLocales.size === 0) {
+      console.log(`[Comment] No translation needed for comment #${comment.id} on #${issue.number} (locale=${commentLocale}, issueLocale=${issueOriginalLocale || 'untracked'})`);
       return;
     }
 
-    // ─── Path B: Comment in a target locale on a tracked issue → translate back to contributor's language ───
-    if (isInTargetLocale && issueRecord && !targetLocales.includes(issueRecord.locale)) {
-      const contributorLocale = issueRecord.locale;
-      console.log(`[Comment] Translating reply on #${issue.number} (${commentLocale} → ${contributorLocale})`);
+    // 4. Translate and post for each required locale
+    for (const tl of neededLocales) {
+      console.log(`[Comment] Translating comment on #${issue.number} (${commentLocale} → ${tl})`);
 
-      const translatedReply = await translateReply(comment.body, contributorLocale, commentLocale);
+      const translatedReply = await translateReply(comment.body, tl, commentLocale);
+      
+      // Determine direction for UI/logging
+      // If the target is the issue's original locale AND it's not a maintainer locale, we assume it's for the contributor
+      const isForContributor = tl === issueOriginalLocale && !targetLocales.includes(tl);
+      const direction = isForContributor ? 'to-contributor' : 'to-maintainer';
 
       await postReplyTranslation(repo, issue.number, {
-        locale: contributorLocale,
+        locale: tl,
+        originalLocale: commentLocale,
         originalBody: comment.body,
         translatedBody: translatedReply,
         author: comment.user.login,
-        direction: 'to-contributor',
+        direction,
+        commentUrl: comment.html_url,
       });
 
       broadcast({
@@ -237,20 +224,18 @@ export async function processComment(comment, issue, repo) {
           author: comment.user.login,
           originalBody: comment.body,
           translatedBody: translatedReply,
-          direction: `${commentLocale} → ${contributorLocale}`,
-          locale: contributorLocale,
+          direction: `${commentLocale} → ${tl}`,
+          locale: tl,
           timestamp: new Date().toISOString(),
+          commentUrl: comment.html_url,
         },
       });
-      broadcastStats();
-      cache.set(`comment:${comment.id}`, true, 3600);
 
-      console.log(`✓ Translated reply on #${issue.number} (${commentLocale} → ${contributorLocale})`);
-      return;
+      console.log(`✓ Translated comment on #${issue.number} (${commentLocale} → ${tl})`);
     }
 
-    // ─── No translation needed ───────────────────────────────────────
-    console.log(`[Comment] No translation needed for comment #${comment.id} on #${issue.number} (locale=${commentLocale}, issueLocale=${issueRecord?.locale || 'untracked'})`);
+    broadcastStats();
+    cache.set(`comment:${comment.id}`, true, 3600);
 
   } catch (err) {
     console.error(`Pipeline error for comment #${comment?.id}:`, err);

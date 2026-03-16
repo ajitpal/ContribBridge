@@ -102,16 +102,20 @@ export async function postTranslation(repo, issueNumber, data) {
  * - Contributor comment (non-English → English): "Translated from `locale`"
  * - Maintainer reply (English → contributor locale): "Translated into `locale`"
  */
-export async function postReplyTranslation(repo, issueNumber, { locale, originalBody, translatedBody, author, direction }) {
+export async function postReplyTranslation(repo, issueNumber, { locale, originalLocale, originalBody, translatedBody, author, direction, commentUrl }) {
   const [owner, repoName] = repo.full_name.split('/');
   
-  const dirLabel = direction === 'to-english'
-    ? `Translated from \`${locale}\``
+  const dirLabel = direction === 'to-english' || direction === 'to-maintainer'
+    ? `Translated from \`${originalLocale}\` → \`${locale}\``
     : `Translated for @${author} into \`${locale}\``;
   
+  const authorLink = commentUrl 
+    ? `[Original comment by @${author}](${commentUrl})` 
+    : `Original`;
+
   const body = [
     `> 🌎 **ContribBridge** · ${dirLabel}`,
-    `> Original: _"${originalBody.length > 50 ? originalBody.substring(0, 47) + '...' : originalBody}"_`,
+    `> ${authorLink}: _"${originalBody.length > 50 ? originalBody.substring(0, 47) + '...' : originalBody}"_`,
     '',
     translatedBody,
   ].join('\n');
