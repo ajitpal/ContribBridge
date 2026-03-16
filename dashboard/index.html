@@ -591,13 +591,17 @@
             div.className = 'card reply';
             div.innerHTML = `
                 <div class="card-header">
-                    <span>REPLY // ${(comment.direction || 'EN → ??').toUpperCase()}</span>
+                    <span>
+                        <a href="https://github.com/${comment.repo}/issues/${comment.issueNumber}" target="_blank" style="color: inherit; text-decoration: none;">
+                            REPLY // ${(comment.direction || 'EN → ??').toUpperCase()}
+                        </a>
+                    </span>
                     <span>${formatDate(comment.timestamp)}</span>
                 </div>
                 <div class="card-title">Translated Response</div>
                 <div class="card-body">${escape(comment.translatedBody)}</div>
                 <div class="card-meta">
-                    <span><strong>REPO:</strong> ${comment.repo}</span>
+                    <span><strong>REPO:</strong> ${comment.repo} #${comment.issueNumber}</span>
                     <span><strong>AUTHOR:</strong> @${comment.author}</span>
                 </div>
             `;

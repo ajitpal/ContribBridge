@@ -47,11 +47,11 @@ export function initDashboard(httpServer) {
         ORDER BY count DESC
       `).all();
 
-      // Get language stats
+      // Get language stats (from configured target locales in repo_locales)
       const langStats = db.prepare(`
-        SELECT locale as lang, COUNT(*) as count 
-        FROM issues 
-        GROUP BY locale 
+        SELECT target_locale as lang, COUNT(*) as count 
+        FROM repo_locales 
+        GROUP BY target_locale 
         ORDER BY count DESC
       `).all();
 
@@ -109,9 +109,9 @@ export function broadcastStats() {
     `).all();
 
     const langStats = db.prepare(`
-      SELECT locale as lang, COUNT(*) as count 
-      FROM issues 
-      GROUP BY locale 
+      SELECT target_locale as lang, COUNT(*) as count 
+      FROM repo_locales 
+      GROUP BY target_locale 
       ORDER BY count DESC
     `).all();
 
