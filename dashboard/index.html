@@ -455,37 +455,50 @@
 
 <body>
     <header>
-        <div style="display: flex; align-items: center; gap: 20px;">
-            <button class="btn-ghost" onclick="location.href='/'">← EXIT</button>
-            <div class="brand">
-                <span style="font-size: 1.5rem">🌉</span>
-                CONTRIBBRIDGE / CONTROL CENTER
-            </div>
+        <div class="logo" onclick="location.href='/'" style="cursor: pointer;">
+            <span style="font-size: 1.5rem;">🌌</span>
+            CONTRIBBREGE / CONTROL CENTER
         </div>
-
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <button class="btn-outline" onclick="clearFeed()">☒ Clear Feed</button>
-
-            <div id="status-pill">
-                <span id="dot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger)"></span>
-                <span id="status-text">OFFLINE</span>
+        <div class="controls">
+            <button id="theme-toggle" class="toggle-btn">
+                <span>🌓</span> THEME
+            </button>
+            <div style="background: var(--border); width: 1px; height: 20px;"></div>
+            <button id="view-list" class="toggle-btn active" onclick="setViewMode('list')">
+                <span>☰</span> LIST
+            </button>
+            <button id="view-tile" class="toggle-btn" onclick="setViewMode('tile')">
+                <span>☷</span> TILES
+            </button>
+            <div style="background: var(--border); width: 1px; height: 20px;"></div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div id="dot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger);"></div>
+                <span id="status-text" style="font-size: 0.6rem; letter-spacing: 1px; color: var(--text-dim);">CONNECTING...</span>
             </div>
         </div>
     </header>
 
-    <div class="main-container">
+    <main>
         <aside>
             <div class="stat-section">
-                <h3><span style="font-size: 1rem">📦</span> Repositories</h3>
-                <ul class="stat-list" id="repo-list">
-                    <li class="empty-state" style="padding: 10px 0; font-size: 0.8rem">No data...</li>
-                </ul>
+                <h3>REPOSITORIES</h3>
+                <ul id="repo-list" class="stat-list"></ul>
             </div>
+
             <div class="stat-section">
-                <h3><span style="font-size: 1rem">🌐</span> Languages</h3>
-                <ul class="stat-list" id="lang-list">
-                    <li class="empty-state" style="padding: 10px 0; font-size: 0.8rem">No data...</li>
-                </ul>
+                <h3>LANGUAGES</h3>
+                <ul id="lang-list" class="stat-list"></ul>
+            </div>
+
+            <div class="analytics-grid">
+                <div class="widget">
+                    <div class="widget-label">Time Saved</div>
+                    <div id="time-saved" class="widget-val">0h 0m</div>
+                </div>
+                <div class="widget">
+                    <div class="widget-label">Uplinks / 24h</div>
+                    <div id="uplinks-24h" class="widget-val">0</div>
+                </div>
             </div>
 
             <div class="stat-section" style="margin-top: 20px;">
