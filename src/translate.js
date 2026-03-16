@@ -104,6 +104,24 @@ export async function translateReply(text, targetLocale) {
   );
 }
 
+/**
+ * Generic translation for the playground.
+ */
+export async function translateGenericText(text, targetLocale = 'en') {
+  const engine = lingo ?? (await initLingo());
+  const { locale: sourceLocale } = await detectLanguage(text);
+  
+  if (sourceLocale === targetLocale) return text;
+
+  return await safeTranslate(
+    () => engine.localizeText(text, {
+      sourceLocale,
+      targetLocale,
+    }),
+    text
+  );
+}
+
 // ─── Method 4-b: localizeChat (full thread) ──────────────────────
 /**
  * Translate an entire comment thread from EN back to the
