@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import { verifyGitHubSignature } from './middleware/verifyGhSig.js';
 import { processIssue, processComment } from './pipeline.js';
-import { initDashboard, broadcast } from './dashboard.js';
+import { initDashboard, broadcast, broadcastStats } from './dashboard.js';
 import { initLingo, translateGenericText } from './translate.js';
 import { getRepoVisibility, registerWebhook } from './github.js';
 import { startPolling } from './polling.js';
@@ -14,6 +14,18 @@ import { startPolling } from './polling.js';
 // Simple in-memory rate limiter for playground and connector
 const playgroundCooldowns = new Map();
 const connectorCooldowns = new Map();
+
+// ─── Process Level Crash Guards (Enterprise Resilience) ──────────
+process.on('uncaughtException', (err) => {
+  console.error('[CRITICAL] Uncaught Exception:', err.message);
+  console.error(err.stack);
+  // In a real enterprise app, we might send this to Sentry/Datadog and exit gracefully.
+  // For ContribBridge, we log and attempt to keep the bridge alive.
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[CRITICAL] Unhandled Promise Rejection at:', promise, 'reason:', reason);
+});
 
 // ─── Express app ─────────────────────────────────────────────────
 const app = express();
@@ -106,9 +118,12 @@ app.post('/api/playground', async (req, res) => {
   const { text } = req.body;
   const ip = req.ip || req.headers['x-forwarded-for'];
 
-  if (!text) return res.status(400).json({ error: 'Text is required' });
+  // 1. Guardrail: Strict Type & Presence Validation
+  if (!text || typeof text !== 'string') {
+    return res.status(400).json({ error: 'Valid string text is required' });
+  }
 
-  // 1. Guardrail: Character Limit
+  // 2. Guardrail: Character Limit
   if (text.length > 1000) {
     return res.status(400).json({ error: 'Text too long (max 1000 characters)' });
   }
@@ -156,9 +171,9 @@ app.post('/api/connect', async (req, res) => {
   const { repo } = req.body;
   const ip = req.ip || req.headers['x-forwarded-for'];
   
-  // 1. Guardrail: Basic validation
-  if (!repo || !repo.includes('/') || repo.split('/').length !== 2) {
-    return res.status(400).json({ error: 'Valid repository (owner/repo) required' });
+  // 1. Guardrail: Strict Type & Format Validation
+  if (!repo || typeof repo !== 'string' || !repo.includes('/') || repo.split('/').length !== 2) {
+    return res.status(400).json({ error: 'Valid repository structure (owner/repo) required' });
   }
 
   // 2. Guardrail: IP-based Rate Limiting (5 connections per minute)
@@ -228,15 +243,28 @@ app.post('/api/connect', async (req, res) => {
   } catch (err) {
     console.error(`[Connector] Failed to connect ${repo}:`, err.message);
     
-    let errorMessage = 'Connection failed';
-    if (err.status === 404) errorMessage = 'Repository not found';
-    if (err.code === 'NOPERM') errorMessage = 'Admin permissions required on GitHub';
-    
-    res.status(err.status || 500).json({ 
-      error: errorMessage,
-      isPrivate: err.isPrivate || false
-    });
+    if (!res.headersSent) {
+      let errorMessage = 'Connection failed';
+      if (err.status === 404) errorMessage = 'Repository not found';
+      if (err.code === 'NOPERM') errorMessage = 'Admin permissions required on GitHub';
+      
+      res.status(err.status || 500).json({ 
+        error: errorMessage,
+        isPrivate: err.isPrivate || false
+      });
+    }
   }
+});
+
+// ─── Global Express Error Boundary ───────────────────────────────
+// Catches any unhandled errors in synchronous or asynchronous route handlers
+app.use((err, req, res, next) => {
+  console.error('[Express Global Boundary] Caught unexpected error:', err.message);
+  res.status(500).json({ 
+    error: 'An internal system processing error occurred',
+    // In production, we obscure stack traces
+    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
 });
 
 // ─── Exported start function (used by CLI `watch` command) ───────
