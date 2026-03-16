@@ -43,9 +43,48 @@ export async function processIssue(issue, repo) {
       return;
     }
 
+    // 5. Persist to SQLite (store the latest translation for history)
+    db.prepare(
+      `INSERT OR REPLACE INTO issues VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      issue.id,
+      repo.full_name,
+      issue.number,
+      locale,
+      issue.title, // Fallback to original if no translation
+      issue.body,  // Fallback to original if no translation
+      issue.title,
+      issue.body,
+      issue.user.login,
+      98, // Initial confidence
+      new Date().toISOString()
+    );
+
+    // 6. Broadcast "Received" state to dashboard (Initial sync)
+    broadcast({
+      type: 'issue',
+      data: {
+        id: issue.id,
+        number: issue.number,
+        repo: repo.full_name,
+        author: issue.user.login,
+        originalTitle: issue.title,
+        originalBody: issue.body,
+        translatedTitle: issue.title,
+        translatedBody: issue.body,
+        detectedLocale: locale,
+        targetLocale: locale,
+        confidence: 100,
+        labels: '',
+        severity: 'low',
+        translationMs: 0,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
     const startMs = Date.now();
 
-    // 5. Translate to each configured target locale
+    // 7. Translate to each configured target locale
     for (const targetLocale of targetLocales) {
       const { translatedTitle, translatedBody } = await translateIssue({
         ...issue,
@@ -53,7 +92,7 @@ export async function processIssue(issue, repo) {
         targetLocale,
       });
 
-      // 6. AI enrichment — labels + severity (only once, on first translation)
+      // 8. AI enrichment — labels + severity (only once, on first translation)
       const enriched = await enrichIssue({
         title: translatedTitle,
         body: translatedBody,
@@ -61,7 +100,7 @@ export async function processIssue(issue, repo) {
 
       enriched.ms = enriched.ms || Date.now() - startMs;
 
-      // 7. Post translated comment back to GitHub
+      // 9. Post translated comment back to GitHub
       await postTranslation(repo, issue.number, {
         locale,
         targetLocale,
@@ -70,7 +109,7 @@ export async function processIssue(issue, repo) {
         ...enriched,
       });
 
-      // 8. Broadcast to live dashboard
+      // 10. Broadcast updated translation to live dashboard
       broadcast({
         type: 'issue',
         data: {
@@ -92,21 +131,14 @@ export async function processIssue(issue, repo) {
         },
       });
 
-      // 9. Persist to SQLite (store the latest translation for history)
+      // 11. Update persistence with the latest translation
       db.prepare(
-        `INSERT OR REPLACE INTO issues VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `UPDATE issues SET translated_title = ?, translated_body = ?, confidence = ? WHERE id = ?`
       ).run(
-        issue.id,
-        repo.full_name,
-        issue.number,
-        locale,
         translatedTitle,
         translatedBody,
-        issue.title,
-        issue.body,
-        issue.user.login,
         enriched.confidence || 98,
-        new Date().toISOString()
+        issue.id
       );
 
       console.log(
@@ -192,19 +224,51 @@ export async function processComment(comment, issue, repo) {
       }
     }
 
+    // 5. Initial Persist + Broadcast (Ensures real-time visibility)
+    db.prepare(`
+      INSERT OR REPLACE INTO comments (id, repo, issue_number, author, original_body, translated_body, direction, locale, comment_url, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      comment.id,
+      repo.full_name,
+      issue.number,
+      comment.user.login,
+      comment.body,
+      comment.body, // Fallback
+      'received',
+      commentLocale,
+      comment.html_url,
+      new Date().toISOString()
+    );
+
+    broadcast({
+      type: 'comment',
+      data: {
+        id: comment.id,
+        issueNumber: issue.number,
+        repo: repo.full_name,
+        author: comment.user.login,
+        originalBody: comment.body,
+        translatedBody: comment.body,
+        direction: `received (${commentLocale})`,
+        locale: commentLocale,
+        timestamp: new Date().toISOString(),
+        commentUrl: comment.html_url,
+      },
+    });
+
     if (neededLocales.size === 0) {
       console.log(`[Comment] No translation needed for comment #${comment.id} on #${issue.number} (locale=${commentLocale}, issueLocale=${issueOriginalLocale || 'untracked'})`);
       return;
     }
 
-    // 4. Translate and post for each required locale
+    // 6. Translate and post for each required locale
     for (const tl of neededLocales) {
       console.log(`[Comment] Translating comment on #${issue.number} (${commentLocale} → ${tl})`);
 
       const translatedReply = await translateReply(comment.body, tl, commentLocale);
       
       // Determine direction for UI/logging
-      // If the target is the issue's original locale AND it's not a maintainer locale, we assume it's for the contributor
       const isForContributor = tl === issueOriginalLocale && !targetLocales.includes(tl);
       const direction = isForContributor ? 'to-contributor' : 'to-maintainer';
 
@@ -236,21 +300,14 @@ export async function processComment(comment, issue, repo) {
 
       console.log(`✓ Translated comment on #${issue.number} (${commentLocale} → ${tl})`);
 
-      // Persist comment to DB for dashboard history/threading
+      // Update persisted comment with translation
       db.prepare(`
-        INSERT OR REPLACE INTO comments (id, repo, issue_number, author, original_body, translated_body, direction, locale, comment_url, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        UPDATE comments SET translated_body = ?, direction = ?, locale = ? WHERE id = ?
       `).run(
-        comment.id,
-        repo.full_name,
-        issue.number,
-        comment.user.login,
-        comment.body,
         translatedReply,
         direction,
         tl,
-        comment.html_url,
-        new Date().toISOString()
+        comment.id
       );
     }
 

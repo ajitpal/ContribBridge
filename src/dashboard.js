@@ -91,7 +91,22 @@ export function initDashboard(httpServer) {
       console.error('WebSocket Error:', err.message);
       clients.delete(ws);
     });
+
+    ws.on('pong', () => {
+      ws.isAlive = true;
+    });
   });
+
+  // Heartbeat mechanism: Ping every 30s to keep connection alive
+  const interval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      if (ws.isAlive === false) return ws.terminate();
+      ws.isAlive = false;
+      ws.ping();
+    });
+  }, 30000);
+
+  wss.on('close', () => clearInterval(interval));
 }
 
 /**

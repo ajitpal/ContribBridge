@@ -472,6 +472,8 @@
         ws.onclose = () => {
             dot.className = '';
             statusText.textContent = 'RECONNECTING...';
+            // Improved reconnection with jittered exponential backoff could go here, 
+            // but for now, simple 5s reload is better than nothing
             setTimeout(() => window.location.reload(), 5000);
         };
 
