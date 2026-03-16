@@ -512,20 +512,56 @@ body::before{
   font-weight:300;
 }
 
-.step-code{
-  background:var(--bg);
-  border:1px solid var(--border);
-  border-radius:5px;
-  padding:10px 12px;
-  font-size:0.7rem;
-  line-height:1.6;
-  overflow-x:auto;
+.step-code {
+  background: #000;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 14px;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  position: relative;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+  font-family: 'IBM Plex Mono', monospace;
 }
-.step-code .g{color:var(--green)}
-.step-code .c{color:var(--cyan)}
-.step-code .a{color:var(--amber)}
-.step-code .m{color:#7aaa76}
-.step-code .p{color:var(--purple)}
+
+.step-code::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border2), transparent);
+}
+
+.step-code .g { color: var(--green); font-weight: 600; }
+.step-code .c { color: var(--cyan); }
+.step-code .a { color: var(--amber); }
+.step-code .m { color: #5a7856; }
+.step-code .p { color: var(--purple); }
+
+.step-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.copy-mini {
+  font-size: 0.6rem;
+  color: var(--muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.1s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.copy-mini:hover {
+  border-color: var(--green);
+  color: var(--green);
+  background: var(--dim);
+}
 
 /* ─── LIVE DEMO SECTION ─── */
 .demo-section{
@@ -938,20 +974,24 @@ footer{
 <span class="m">✓ Webhook secret generated</span>
 <span class="m">✓ Dashboard at :4000</span>
       </div>
+      <div class="step-actions">
+        <button class="copy-mini" onclick="copyText('npx contribbridge@latest init')">copy command</button>
+      </div>
     </div>
 
     <div class="step">
       <div class="step-num">02</div>
       <span class="step-icon">🔑</span>
-      <div class="step-title">Set Two Keys</div>
-      <div class="step-desc">Only two env vars required. The init wizard prompts for both. Public repos are free forever — add a license key only for private repos.</div>
+      <div class="step-title">Set Your Keys</div>
+      <div class="step-desc">Configure your environment. The init wizard will prompt for your Lingo.dev and GitHub credentials to secure the connection.</div>
       <div class="step-code">
-<span class="m"># .env — two required keys</span>
+<span class="m"># .env — required connection keys</span>
 <span class="p">LINGODOTDEV_API_KEY</span>=<span class="a">lingo_xxx</span>
 <span class="p">GITHUB_TOKEN</span>=<span class="a">ghp_xxx</span>
-
-<span class="m"># Private repos (Pro only):</span>
 <span class="p">CONTRIBBRIDGE_LICENSE_KEY</span>=<span class="a">jwt_xxx</span>
+      </div>
+      <div class="step-actions">
+        <button class="copy-mini" onclick="copyText('LINGODOTDEV_API_KEY=xxx\nGITHUB_TOKEN=xxx\nCONTRIBBRIDGE_LICENSE_KEY=xxx')">copy template</button>
       </div>
     </div>
 
@@ -961,6 +1001,7 @@ footer{
       <div class="step-title">Connect & Watch</div>
       <div class="step-desc">Connect any repo — auto-registers the GitHub webhook via Octokit. Every new issue flows through the Lingo.dev pipeline in under 600ms.</div>
       <div class="step-code">
+<span class="m"># Link and watch repo</span>
 <span class="g">contribbridge connect</span> <span class="c">--repo</span> <span class="a">org/repo</span>
 <span class="g">contribbridge watch</span>
 
@@ -968,6 +1009,9 @@ footer{
 <span class="m">→ localizeHtml()     ~300ms</span>
 <span class="m">→ postComment()      ~120ms</span>
 <span class="g">✓ Total:             &lt;600ms</span>
+      </div>
+      <div class="step-actions">
+        <button class="copy-mini" onclick="copyText('contribbridge connect --repo org/repo\ncontribbridge watch')">copy commands</button>
       </div>
     </div>
   </div>
@@ -1391,6 +1435,11 @@ function copyAndAnimate() {
 function copyInstall() {
   navigator.clipboard?.writeText('npx contribbridge init').catch(()=>{});
   showToast('⎘','Copied: npx contribbridge init');
+}
+
+function copyText(txt) {
+  navigator.clipboard?.writeText(txt).catch(()=>{});
+  showToast('⎘','Copied to clipboard');
 }
 
 // ── TOAST ─────────────────────────────────────────────────────

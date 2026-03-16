@@ -21,7 +21,7 @@ graph TD
     subgraph "Verification & Gating"
         WB --> SIG[HMAC-SHA256 Signature Verify]
         SIG -- "ACK 200" --> GH
-        SIG --> GATE[License Gate: Public vs Private]
+        SIG --> GATE[License Validation]
     end
     
     subgraph "Translation Pipeline (Powered by Lingo.dev)"
@@ -57,7 +57,7 @@ contribbridge/
 │   ├── cache.js        # node-cache for deduplication
 │   ├── db.js           # SQLite setup (Issues & Licenses)
 │   └── middleware/
-│       ├── licenseGate.js  # Open-core gating logic
+│       ├── licenseGate.js  # License validation logic
 │       └── verifyGhSig.js  # GitHub HMAC verification
 ├── dashboard/
 │   └── index.html      # Real-time dashboard frontend
@@ -112,7 +112,7 @@ node bin/cli.js init
 # 2. Add your Tunnel URL to .env
 # Open .env and set: WEBHOOK_URL=https://smee.io/YOUR_UNIQUE_ID
 
-# 3. Connect a public test repository
+# 3. Connect a test repository
 node bin/cli.js connect --repo your-username/test-repo
 ```
 
@@ -141,7 +141,7 @@ Go to your GitHub test repository and create a **New Issue** in a non-English la
 - **Bidirectional**: Maintainers reply in English; ContribBridge translates it back for the contributor.
 - **Code Preservation**: Intelligent markdown and code block preservation during translation.
 - **Live Dashboard**: Watch translations happen in real-time via a clean WebSocket-powered feed.
-- **Open-Core Model**: Free for public repositories; professional features for private repositories.
+- **Universal Support**: Built to work with any repository setup.
 
 ---
 
@@ -155,14 +155,14 @@ Go to your GitHub test repository and create a **New Issue** in a non-English la
 | **GitHub API** | @octokit/rest (Octokit) |
 | **Real-time** | WebSocket (ws v8) |
 | **Database** | SQLite via better-sqlite3 |
-| **Authentication** | RS256 JWT (Offline License Verification) |
+| **Authentication** | RS256 JWT (License Verification) |
 
 
 ---
 
 ## 📄 License
 
-Community Edition: **Apache 2.0**
+License: **Apache 2.0**
 
 ---
 

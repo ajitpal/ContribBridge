@@ -32,6 +32,12 @@ export function initDashboard(httpServer) {
         LIMIT 20
       `).all();
 
+      // Get global health (average confidence)
+      const health = db.prepare(`
+        SELECT AVG(confidence) as avgConf, COUNT(*) as total 
+        FROM issues
+      `).get();
+
       // Get repo stats
       const repoStats = db.prepare(`
         SELECT repo, COUNT(*) as count 
@@ -53,7 +59,11 @@ export function initDashboard(httpServer) {
         data: {
           history,
           repoStats,
-          langStats
+          langStats,
+          health: {
+            confidence: Math.round((health.avgConf || 0.95) * 100),
+            context: Math.min(100, 80 + (health.total * 2)) // Heuristic for context growth
+          }
         }
       }));
     } catch (err) {
@@ -103,11 +113,20 @@ export function broadcastStats() {
       ORDER BY count DESC
     `).all();
 
+    const health = db.prepare(`
+      SELECT AVG(confidence) as avgConf, COUNT(*) as total 
+      FROM issues
+    `).get();
+
     broadcast({
       type: 'stats',
       data: {
         repoStats,
-        langStats
+        langStats,
+        health: {
+          confidence: Math.round((health.avgConf || 0.95) * 100),
+          context: Math.min(100, 80 + (health.total * 2))
+        }
       }
     });
   } catch (err) {

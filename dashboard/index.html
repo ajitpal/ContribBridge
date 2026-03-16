@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,8 +20,12 @@
             --danger: #ef4444;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             background: var(--bg);
             color: var(--text);
@@ -37,7 +42,10 @@
             content: " ";
             display: block;
             position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
             z-index: 1000;
             background-size: 100% 2px, 3px 100%;
@@ -52,7 +60,7 @@
             justify-content: space-between;
             padding: 0 20px;
             background: var(--surface);
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             z-index: 10;
         }
 
@@ -131,7 +139,10 @@
             background: var(--primary-dim);
         }
 
-        .stat-val { color: var(--primary); font-weight: 600; }
+        .stat-val {
+            color: var(--primary);
+            font-weight: 600;
+        }
 
         /* Main Feed */
         #feed-view {
@@ -155,14 +166,25 @@
         }
 
         @keyframes bootIn {
-            from { opacity: 0; transform: scale(0.98); filter: blur(4px); }
-            to { opacity: 1; transform: scale(1); filter: blur(0); }
+            from {
+                opacity: 0;
+                transform: scale(0.98);
+                filter: blur(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+                filter: blur(0);
+            }
         }
 
         .card::before {
             content: "";
             position: absolute;
-            left: 0; top: 0; bottom: 0;
+            left: 0;
+            top: 0;
+            bottom: 0;
             width: 4px;
             background: var(--primary);
             box-shadow: 0 0 10px var(--primary-glow);
@@ -192,7 +214,7 @@
             font-size: 0.95rem;
             line-height: 1.6;
             color: var(--text);
-            background: rgba(0,0,0,0.3);
+            background: rgba(0, 0, 0, 0.3);
             padding: 12px;
             border-radius: 4px;
             margin-bottom: 12px;
@@ -233,7 +255,10 @@
             outline: none;
         }
 
-        .play-input:focus { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-dim); }
+        .play-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-dim);
+        }
 
         .btn-play {
             padding: 12px 24px;
@@ -246,30 +271,149 @@
             border-radius: 4px;
         }
 
-        .btn-play:hover { background: var(--text-dim); box-shadow: 0 0 15px var(--primary-glow); }
+        .btn-play:hover {
+            background: var(--text-dim);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-ghost:hover {
+            color: var(--text);
+        }
+
+        .health-bar-container {
+            margin-top: 8px;
+            height: 4px;
+            background: var(--surface-bright);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .health-bar {
+            height: 100%;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+            transition: width 0.5s ease;
+        }
+
+        .health-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+
+        .health-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .tag {
+            background: var(--surface-bright);
+            border: 1px solid var(--border);
+            padding: 2px 8px;
+            font-size: 0.65rem;
+            border-radius: 2px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .tag.issue-type {
+            color: #fbbf24;
+            border-color: rgba(251, 191, 36, 0.4);
+        }
+
+        .playground-bar {
+            background: var(--surface-bright);
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            margin-top: 10px;
+        }
 
         .empty-state {
             margin: auto;
             text-align: center;
-            color: var(--border2);
-            opacity: 0.5;
+            color: var(--text-dim);
+            opacity: 0.3;
         }
 
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border2);
+        }
     </style>
 </head>
+
 <body>
     <header>
-        <div class="brand">
-            <span style="font-size: 1.5rem">🌉</span>
-            CONTRIBBRIDGE / CONTROL_CENTER
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <button class="btn-ghost" onclick="location.href='/'">← EXIT</button>
+            <div class="brand">
+                <span style="font-size: 1.5rem">🌉</span>
+                CONTRIBBRIDGE / CONTROL CENTER
+            </div>
         </div>
-        <div id="status-pill">
-            <span id="dot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger)"></span>
-            <span id="status-text">OFFLINE</span>
+
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button class="btn-outline" onclick="clearFeed()">☒ Clear Feed</button>
+
+            <div id="status-pill">
+                <span id="dot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger)"></span>
+                <span id="status-text">OFFLINE</span>
+            </div>
         </div>
     </header>
 
@@ -288,13 +432,34 @@
                 </ul>
             </div>
 
+            <div class="stat-section" style="margin-top: 20px;">
+                <h3><span style="font-size: 1rem">📊</span> Translation Health</h3>
+                <div class="health-item">
+                    <div class="health-label"><span>CONFIDENCE</span> <span id="conf-val">94%</span></div>
+                    <div class="health-bar-container">
+                        <div class="health-bar" id="conf-bar" style="width: 94%"></div>
+                    </div>
+                </div>
+                <div class="health-item">
+                    <div class="health-label"><span>CONTEXT</span> <span id="cont-val">88%</span></div>
+                    <div class="health-bar-container">
+                        <div class="health-bar" id="cont-bar"
+                            style="width: 88%; background: #38bdf8; box-shadow: 0 0 10px rgba(56,189,248,0.4);"></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="stat-section" style="margin-top: auto; border-top: 1px solid var(--border); padding-top: 20px;">
                 <h3><span style="font-size: 1rem">🔗</span> Link Repository</h3>
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" id="repo-conn" class="play-input" placeholder="org/repo" style="padding: 8px; font-size: 0.75rem;">
-                    <button class="btn-play" onclick="connectRepo()" style="padding: 8px 12px; font-size: 0.75rem;">LINK</button>
+                    <input type="text" id="repo-conn" class="play-input" placeholder="org/repo"
+                        style="padding: 8px; font-size: 0.75rem;">
+                    <button class="btn-play" onclick="connectRepo()"
+                        style="padding: 8px 12px; font-size: 0.75rem;">LINK</button>
                 </div>
-                <div id="conn-msg" style="font-size: 0.6rem; margin-top: 8px; color: var(--text-dim); text-transform: uppercase;"></div>
+                <div id="conn-msg"
+                    style="font-size: 0.6rem; margin-top: 8px; color: var(--text-dim); text-transform: uppercase;">
+                </div>
             </div>
         </aside>
 
@@ -304,9 +469,20 @@
     </div>
 
     <footer>
-        <span style="font-size: 0.7rem; color: var(--text-dim)">PLAYGROUND:</span>
-        <input type="text" id="playground" class="play-input" placeholder="Paste non-English text to test translation logic...">
-        <button class="btn-play" onclick="simulate()">TRANSLATE</button>
+        <div class="playground-bar">
+            <div style="display: flex; align-items: center; gap: 8px; min-width: 140px;">
+                <span style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">🌐
+                    AUTO-DETECT</span>
+                <span style="color: var(--border)">→</span>
+                <span style="font-size: 0.7rem; color: var(--primary); font-weight: 600;">EN</span>
+            </div>
+            <input type="text" id="playground" class="play-input"
+                placeholder="Paste issue text in any language - watch it translate live..."
+                style="border: none; background: transparent;">
+            <button class="btn-play" onclick="simulate()" style="padding: 10px 15px;">
+                <span style="font-size: 1rem">→</span>
+            </button>
+        </div>
     </footer>
 
     <script>
@@ -334,14 +510,14 @@
 
         ws.onmessage = (event) => {
             const { type, data } = JSON.parse(event.data);
-            
+
             if (type === 'history') {
                 feed.innerHTML = '';
                 if (data.history.length === 0) {
                     feed.innerHTML = '<div class="empty-state">DATABASE_EMPTY / WAITING_FOR_TRAFFIC</div>';
                 }
                 data.history.reverse().forEach(issue => renderIssue(issue));
-                updateStats(data.repoStats, data.langStats);
+                updateStats(data.repoStats, data.langStats, data.health);
             }
 
             if (type === 'issue') {
@@ -353,7 +529,7 @@
             }
 
             if (type === 'stats') {
-                updateStats(data.repoStats, data.langStats);
+                updateStats(data.repoStats, data.langStats, data.health);
             }
 
             if (type === 'playground_result') {
@@ -370,13 +546,22 @@
                     <span>
                         <a href="https://github.com/${issue.repo}/issues/${issue.number}" target="_blank" style="color: inherit; text-decoration: none;">
                             ISSUE #${issue.number}
-                        </a> // ${issue.detectedLocale.toUpperCase()} → EN
+                        </a>
+                    </span>
+                    <span style="background: var(--surface-bright); padding: 2px 6px; border-radius: 2px; font-size: 0.6rem; color: var(--primary);">
+                        ${(issue.detectedLocale || '??').toUpperCase()} → EN
                     </span>
                     <span>${formatDate(issue.timestamp)}</span>
                 </div>
-                <div class="card-title">${escape(issue.translatedTitle)}</div>
-                <div class="card-body">${escape(issue.translatedBody)}</div>
-                <div class="card-meta">
+                <div class="card-title">
+                    <span style="margin-right: 8px;">${issue.labels?.some(l => l.toLowerCase().includes('bug')) ? '🐛' : '💡'}</span>
+                    ${escape(issue.translatedTitle)}
+                </div>
+                <div class="card-body">"${escape(issue.translatedBody)}"</div>
+                <div class="tag-container" id="tags-${issue.id}">
+                    ${(issue.labels || []).map(label => `<span class="tag ${label.toLowerCase().includes('bug') ? 'issue-type' : ''}">${escape(label)}</span>`).join('')}
+                </div>
+                <div class="card-meta" style="margin-top: 15px;">
                     <span><strong>REPO:</strong> ${issue.repo}</span>
                     <span><strong>CONF:</strong> ${issue.confidence || 98}%</span>
                 </div>
@@ -430,20 +615,30 @@
             return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
         }
 
-        function updateStats(repos, langs) {
+        function updateStats(repos, langs, health) {
+            const flags = { 'hi': '🇮🇳', 'zh': '🇨🇳', 'ja': '🇯🇵', 'pt': '🇧🇷', 'de': '🇩🇪', 'es': '🇪🇸', 'fr': '🇫🇷' };
             repoList.innerHTML = repos.map(r => `
                 <li class="stat-item">
-                    <span>${r.repo}</span>
+                    <span><span style="margin-right: 8px; opacity: 0.5;">📁</span> ${r.repo}</span>
                     <span class="stat-val">${r.count}</span>
                 </li>
             `).join('') || '<li class="empty-state">No repos...</li>';
 
-            langList.innerHTML = langs.map(l => `
+            langList.innerHTML = langs.map(l => {
+                const code = l.lang.toLowerCase();
+                return `
                 <li class="stat-item">
-                    <span>${l.lang.toUpperCase()}</span>
+                    <span><span style="margin-right: 8px;">${flags[code] || '🌐'}</span> ${l.lang.toUpperCase()}</span>
                     <span class="stat-val">${l.count}</span>
                 </li>
-            `).join('') || '<li class="empty-state">No langs...</li>';
+            `}).join('') || '<li class="empty-state">No langs...</li>';
+
+            if (health) {
+                document.getElementById('conf-val').textContent = `${health.confidence}%`;
+                document.getElementById('conf-bar').style.width = `${health.confidence}%`;
+                document.getElementById('cont-val').textContent = `${health.context}%`;
+                document.getElementById('cont-bar').style.width = `${health.context}%`;
+            }
         }
 
         function removeEmpty() {
@@ -462,7 +657,7 @@
             const input = document.getElementById('playground');
             const btn = document.querySelector('.btn-play');
             const text = input.value;
-            
+
             if (!text || btn.disabled) return;
 
             btn.disabled = true;
@@ -534,6 +729,11 @@
                 }, 4000);
             }
         }
+
+        function clearFeed() {
+            feed.innerHTML = '<div class="empty-state">FEED_PURGED / WAITING_FOR_UPLINK</div>';
+        }
     </script>
 </body>
+
 </html>
