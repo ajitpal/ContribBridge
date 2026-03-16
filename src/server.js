@@ -156,8 +156,10 @@ app.post('/api/playground', async (req, res) => {
   playgroundCooldowns.set(ip, userData);
 
   try {
-    console.log(`[Playground] Translating for IP ${ip}...`);
-    const translated = await translateGenericText(text, 'en');
+    const { text, target_locale } = req.body;
+    const locale = target_locale || 'en';
+    console.log(`[Playground] Translating for IP ${ip} to ${locale}...`);
+    const translated = await translateGenericText(text, locale);
     
     // Broadcast playground result so it shows up in dashboard feed as a special item
     broadcast({

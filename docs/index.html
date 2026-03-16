@@ -29,14 +29,16 @@
 body.light-theme {
   --bg:       #ffffff;
   --surface:  #f6f8fa;
-  --surface2: #ebeff2;
+  --surface2: #eff2f5;
   --border:   #d0d7de;
   --border2:  #afb8c1;
-  --green:    #117131;
-  --text:     #24292f;
-  --muted:    #57606a;
-  --muted2:   #6e7781;
-  --dim:      rgba(17,113,49,0.05);
+  --green:    #117131; /* Deep Emerald */
+  --green2:   #15803d;
+  --text:     #1a1f1a; /* Darker for clarity */
+  --muted:    #4a554a; /* Muted but readable */
+  --muted2:   #687668;
+  --dim:      rgba(17,113,49,0.06);
+  --dimmer:   rgba(17,113,49,0.03);
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -66,6 +68,7 @@ body::before{
   pointer-events:none;
   z-index:999;
 }
+body.light-theme::before { display: none; }
 
 /* ─── NAV ─── */
 .nav{
@@ -74,6 +77,8 @@ body::before{
   display:flex;align-items:center;justify-content:space-between;
   padding:0 32px;
   background:rgba(8,10,8,0.92);
+  background: var(--bg);
+  opacity: 0.95;
   backdrop-filter:blur(16px);
   border-bottom:1px solid var(--border);
 }
@@ -176,7 +181,7 @@ body::before{
   font-size:clamp(3.5rem,6vw,6.5rem);
   line-height:.95;
   letter-spacing:1px;
-  color:#fff;
+  color:var(--text);
   margin-bottom:8px;
 }
 .hero-h1 em{
@@ -191,13 +196,12 @@ body::before{
   font-size:clamp(3.5rem,6vw,6.5rem);
   line-height:.95;
   letter-spacing:1px;
-  color:#6a8868;
+  color:var(--muted);
   margin-bottom:32px;
 }
 
 .hero-desc{
-  font-size:0.82rem;
-  color:#9dbf99;
+  color:var(--text);
   line-height:1.8;
   max-width:400px;
   margin-bottom:40px;
@@ -238,7 +242,7 @@ body::before{
 .cmd .pkg{color:var(--cyan)}
 .cmd .flag{color:var(--purple)}
 .cmd .val{color:var(--amber)}
-.output{color:#7aa876;font-size:0.7rem;padding-left:18px;margin-top:-6px}
+.output{color:var(--muted);font-size:0.7rem;padding-left:18px;margin-top:-6px}
 
 .copy-row{
   padding:10px 14px;
@@ -381,7 +385,7 @@ body::before{
 
 .orig-text{
   font-size:0.68rem;
-  color:#8aaa86;
+  color:var(--muted);
   font-style:italic;
   padding:6px 10px;
   background:var(--dimmer);
@@ -423,7 +427,7 @@ body::before{
 .tag-review{background:rgba(255,179,71,0.1);color:var(--amber)}
 .tag-feat{background:rgba(92,243,255,0.08);color:var(--cyan)}
 .tag-bug{background:rgba(255,85,85,0.1);color:var(--red)}
-.tag-label{background:rgba(57,255,122,0.05);color:#7aaa76;border:1px solid var(--border2)}
+.tag-label{background:var(--dimmer);color:var(--muted);border:1px solid var(--border2)}
 
 .issue-by{margin-left:auto;font-size:0.62rem;color:var(--muted2)}
 
@@ -461,7 +465,7 @@ body::before{
   display:flex;align-items:center;gap:8px;
   padding:0 28px;
   font-size:0.65rem;
-  color:#7aaa76;
+  color:var(--muted);
   border-right:1px solid var(--border);
 }
 .ticker-item strong{color:var(--green)}
@@ -492,12 +496,12 @@ body::before{
   font-size:clamp(2.2rem,4vw,3.8rem);
   line-height:1;
   letter-spacing:1px;
-  color:#fff;
+  color:var(--text);
   margin-bottom:10px;
 }
 
 .section-sub{
-  font-size:0.8rem;color:#9dbf99;
+  font-size:0.8rem;color:var(--muted);
   line-height:1.8;max-width:520px;
   margin-bottom:60px;
   font-weight:300;
@@ -538,7 +542,7 @@ body::before{
 }
 
 .step-desc{
-  font-size:0.72rem;color:#9dbf99;
+  font-size:0.72rem;color:var(--muted);
   line-height:1.7;margin-bottom:14px;
   font-weight:300;
 }
@@ -567,7 +571,7 @@ body::before{
 .step-code .g { color: var(--green); font-weight: 600; }
 .step-code .c { color: var(--cyan); }
 .step-code .a { color: var(--amber); }
-.step-code .m { color: #5a7856; }
+.step-code .m { color: var(--muted2); }
 .step-code .p { color: var(--purple); }
 
 .step-actions {
@@ -623,7 +627,7 @@ body::before{
 .term-dot{width:11px;height:11px;border-radius:50%}
 
 .term-title{
-  font-size:0.68rem;color:#8aaa86;
+  font-size:0.68rem;color:var(--muted);
   margin:0 auto;letter-spacing:.5px;
 }
 
@@ -705,7 +709,7 @@ body::before{
   display:flex;align-items:center;gap:5px;
 }
 .tb-btn:hover{border-color:var(--green);color:var(--green)}
-.tb-btn.primary{background:var(--green);color:#000;border-color:var(--green);font-weight:600}
+.tb-btn.primary{background:var(--green);color:var(--bg);border-color:var(--green);font-weight:600}
 .tb-btn.primary:hover{box-shadow:0 0 16px rgba(57,255,122,.4);transform:translateY(-1px)}
 
 .tb-spacer{flex:1}
@@ -758,7 +762,7 @@ body::before{
 .tbar-input::placeholder{color:var(--muted2)}
 
 .tbar-go{
-  padding:0 16px;background:var(--green);color:#000;
+  padding:0 16px;background:var(--green);color:var(--bg);
   border:none;border-radius:5px;font-family:'IBM Plex Mono',monospace;
   font-weight:700;font-size:0.75rem;cursor:pointer;
   transition:all .15s;flex-shrink:0;
@@ -811,7 +815,7 @@ body::before{
 }
 
 .arch-name{font-size:0.72rem;font-weight:600;color:var(--text);margin-bottom:4px}
-.arch-sub{font-size:0.62rem;color:#9dbf99;line-height:1.5}
+.arch-sub{font-size:0.62rem;color:var(--muted);line-height:1.5}
 .arch-badge{
   display:inline-block;
   font-size:0.55rem;margin-top:5px;
@@ -885,7 +889,7 @@ footer{
     <a class="nav-link" href="/dashboard">Dashboard</a>
     <div class="nav-npm" onclick="copyInstall()">
       $ npx contribbridge init
-      <span style="color:#7aaa76">⎘</span>
+      <span style="color:var(--muted)">⎘</span>
     </div>
   </div>
 </nav>
@@ -948,7 +952,7 @@ footer{
   <div class="hero-right" style="animation:fadeUp .5s ease .15s both">
     <div class="feed-header">
       <span class="feed-title">// live issue feed</span>
-      <span style="font-size:0.68rem;color:#8aaa86">ajitpal/ContribBridge</span>
+      <span style="font-size:0.68rem;color:var(--muted)">ajitpal/ContribBridge</span>
       <div class="live-badge">LIVE</div>
     </div>
     <div class="feed-filters">
@@ -1077,7 +1081,7 @@ footer{
             <span class="repo-count rc-green">0</span>
           </div>
           <div class="repo-row" onclick="switchRepo(this,'vercel/next.js')">
-            <div class="repo-dot" style="background:#fff"></div>
+            <div class="repo-dot" style="background:var(--muted2)"></div>
             <span class="repo-name">vercel/next.js</span>
             <span class="repo-count rc-amber">11</span>
           </div>
@@ -1094,18 +1098,18 @@ footer{
             <div class="lang-row"><span>🇯🇵</span> Japanese <span style="margin-left:auto;font-size:.62rem;color:var(--green)">743</span></div>
             <div class="lang-row"><span>🇮🇳</span> Hindi <span style="margin-left:auto;font-size:.62rem;color:var(--green)">534</span></div>
             <div class="lang-row"><span>🇩🇪</span> German <span style="margin-left:auto;font-size:.62rem;color:var(--green)">412</span></div>
-            <div class="lang-row" style="font-size:.62rem;color:#5a7856;padding:6px 6px 0">+ 78 more →</div>
+            <div class="lang-row" style="font-size:.62rem;color:var(--muted2);padding:6px 6px 0">+ 78 more →</div>
           </div>
 
           <div class="health-row">
             <div class="health-label">Translation Health</div>
             <div class="health-bar-wrap">
-              <span style="font-size:.6rem;color:#8aaa86;width:60px">Confidence</span>
+              <span style="font-size:.6rem;color:var(--muted);width:60px">Confidence</span>
               <div class="health-bar"><div class="health-fill" style="width:94%;background:var(--green)"></div></div>
               <span class="health-pct">94%</span>
             </div>
             <div class="health-bar-wrap">
-              <span style="font-size:.6rem;color:#8aaa86;width:60px">Context</span>
+              <span style="font-size:.6rem;color:var(--muted);width:60px">Context</span>
               <div class="health-bar"><div class="health-fill" style="width:88%;background:var(--cyan)"></div></div>
               <span class="health-pct" style="color:var(--cyan)">88%</span>
             </div>
@@ -1143,7 +1147,7 @@ footer{
               <select class="tbar-select">
                 <option>🇬🇧 English</option>
               </select>
-              <span style="font-size:.65rem;color:#8aaa86;margin-left:auto">via Lingo.dev SDK</span>
+              <span style="font-size:.65rem;color:var(--muted);margin-left:auto">via Lingo.dev SDK</span>
             </div>
             <div class="tbar-input-row">
               <textarea class="tbar-input" id="customText"
@@ -1201,27 +1205,7 @@ footer{
     <div style="background:var(--surface2);padding:14px 16px;text-align:center">
       <div style="font-size:.6rem;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:6px">SDK METHOD</div>
       <div style="font-size:.7rem;color:var(--cyan);font-family:'IBM Plex Mono',monospace">detectLocale()</div>
-      <div style="font-size:.62rem;color:#9dbf99;margin-top:4px">Language ID</div>
-    </div>
-    <div style="background:var(--surface2);padding:14px 16px;text-align:center">
-      <div style="font-size:.6rem;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:6px">SDK METHOD</div>
-      <div style="font-size:.7rem;color:var(--cyan);font-family:'IBM Plex Mono',monospace">localizeText()</div>
-      <div style="font-size:.62rem;color:#9dbf99;margin-top:4px">Titles &amp; strings</div>
-    </div>
-    <div style="background:var(--surface2);padding:14px 16px;text-align:center">
-      <div style="font-size:.6rem;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:6px">SDK METHOD</div>
-      <div style="font-size:.7rem;color:var(--cyan);font-family:'IBM Plex Mono',monospace">localizeHtml()</div>
-      <div style="font-size:.62rem;color:#9dbf99;margin-top:4px">Bodies + code safe</div>
-    </div>
-    <div style="background:var(--surface2);padding:14px 16px;text-align:center">
-      <div style="font-size:.6rem;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:6px">SDK METHOD</div>
-      <div style="font-size:.7rem;color:var(--cyan);font-family:'IBM Plex Mono',monospace">localizeChat()</div>
-      <div style="font-size:.62rem;color:#9dbf99;margin-top:4px">Thread replies</div>
-    </div>
-    <div style="background:var(--surface2);padding:14px 16px;text-align:center">
-      <div style="font-size:.6rem;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:6px">SDK METHOD</div>
-      <div style="font-size:.7rem;color:var(--cyan);font-family:'IBM Plex Mono',monospace">localizeObject()</div>
-      <div style="font-size:.62rem;color:#9dbf99;margin-top:4px">Metadata bulk</div>
+      <div style="font-size:.62rem;color:var(--muted);margin-top:4px">Metadata bulk</div>
     </div>
   </div>
 </section>
@@ -1327,7 +1311,7 @@ function renderIssue(issue, container, prepend=false) {
         <span class="issue-by">@${issue.by}</span>
       </div>
       <div class="conf-row">
-        <span style="font-size:.58rem;color:#5a7856">Lingo.dev confidence</span>
+        <span style="font-size:.58rem;color:var(--muted2)">Lingo.dev confidence</span>
         <div class="conf-bar"><div class="conf-fill" style="width:0%" data-w="${issue.conf}%"></div></div>
         <span class="conf-pct">${issue.conf}%</span>
       </div>
