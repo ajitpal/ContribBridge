@@ -183,14 +183,38 @@
             line-height: 1.7;
             margin-bottom: 20px;
             color: var(--text);
+            padding: 12px 16px;
+            background: var(--primary-dim);
+            border-left: 2px solid var(--primary);
+            border-radius: 0 8px 8px 0;
+            display: flex;
+            gap: 8px;
         }
+        .cb-mark { color: var(--primary); font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
+
+        /* Footer / Tags */
+        .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; }
+        .tag-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tag {
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .tag-open { background: var(--primary-dim); color: var(--primary); }
+        .tag-bug { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .tag-feat { background: rgba(57, 255, 122, 0.1); color: var(--primary); }
+        .tag-label { background: var(--surface-bright); color: var(--text-dim); border: 1px solid var(--border); }
+        .issue-by { font-size: 0.65rem; color: var(--text-dim); font-family: var(--font-mono); }
 
         /* Confidence Bar */
         .insight-zone { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); }
         .conf-row { display: flex; align-items: center; gap: 12px; }
-        .conf-label { font-size: 0.6rem; color: var(--text-dim); width: 80px; }
-        .conf-track { flex: 1; height: 4px; background: var(--border); border-radius: 2px; position: relative; }
-        .conf-fill { height: 100%; background: var(--primary); border-radius: 2px; }
+        .conf-label { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+        .conf-track { flex: 1; height: 3px; background: var(--border); border-radius: 2px; position: relative; }
+        .conf-fill { height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.8s cubic-bezier(0.19, 1, 0.22, 1); }
         .conf-val { font-size: 0.65rem; color: var(--primary); font-family: var(--font-mono); font-weight: 600; width: 40px; text-align: right; }
 
         /* Bidirectional Reply Card */
@@ -462,33 +486,59 @@
             div.className = 'card new-entry';
             div.setAttribute('data-repo', issue.repo);
             div.setAttribute('data-issue-number', issue.number);
+            const labels = (issue.labels || '').split(',').filter(l => l);
+            const statusTag = issue.state || 'OPEN';
             
             div.innerHTML = `
                 <div class="card-header">
-                    <span class="card-meta">ISSUE #${issue.number} · ${issue.repo}</span>
-                    <span class="card-lang">${(issue.detectedLocale || '??').toUpperCase()} → EN</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.1rem;">${issue.labels?.includes('bug') ? '🐛' : '✨'}</span>
+                        <div class="card-title" style="margin-bottom: 0;">${escape(issue.translatedTitle)}</div>
+                    </div>
+                    <span class="card-lang" style="background: var(--surface-bright); border: 1px solid var(--border);">${(issue.detectedLocale || '??').toUpperCase()} ${issue.detectedLocale !== 'en' ? '→ EN' : ''}</span>
                 </div>
-                <div class="card-title">${escape(issue.translatedTitle)}</div>
-                <div class="context-zone">"${escape(issue.translatedBody.substring(0, 150))}${issue.translatedBody.length > 150 ? '...' : ''}"</div>
                 
+                <div class="context-zone">
+                    <span style="opacity: 0.3; margin-right: 5px;">"</span>
+                    ${escape(issue.translatedBody.substring(0, 180))}${issue.translatedBody.length > 180 ? '...' : ''}
+                </div>
+
+                <div class="result-zone">
+                    <span><span class="cb-mark">▶ ContribBridge</span> ${escape(issue.translatedBody)}</span>
+                </div>
+                
+                <div class="card-footer">
+                    <div class="tag-row">
+                        <span class="tag tag-open">${statusTag.toUpperCase()}</span>
+                        ${labels.map(l => `<span class="tag tag-label">${l.toUpperCase()}</span>`).join('')}
+                    </div>
+                    <div class="issue-by">@${issue.author || 'contributor'}</div>
+                </div>
+
                 <div class="insight-zone">
                     <div class="conf-row">
-                        <span class="conf-label">CONFIDENCE</span>
-                        <div class="conf-track"><div class="conf-fill" style="width: ${issue.confidence || 98}%"></div></div>
+                        <span class="conf-label">Lingo.dev confidence</span>
+                        <div class="conf-track"><div class="conf-fill" style="width: 0%" data-w="${issue.confidence || 98}%"></div></div>
                         <span class="conf-val">${issue.confidence || 98}%</span>
                     </div>
                 </div>
 
-                <div class="replies-container" id="replies-${issue.repo.replace('/','-')}-${issue.number}">
+                <div class="replies-container" id="replies-${issue.repo.replace('/','-')}-${issue.number}" style="${issue.commentCount > 0 ? '' : 'display:none'}">
                     <div class="replies-header" onclick="toggleReplies(this)">
                         <span>RELATED DISCUSSIONS</span>
-                        <span class="reply-count">0</span>
+                        <span class="reply-count">${issue.commentCount || 0}</span>
                     </div>
                     <div class="replies-content"></div>
                 </div>
-                <div class="card-meta" style="margin-top: 15px;">${formatDate(issue.timestamp)}</div>
+                <div class="card-meta" style="margin-top: 15px; text-align: right; opacity: 0.5;">${issue.repo} #${issue.number} · ${formatDate(issue.timestamp)}</div>
             `;
             feed.prepend(div);
+
+            // Animate confidence bar
+            setTimeout(() => {
+                const fill = div.querySelector('.conf-fill');
+                if (fill) fill.style.width = fill.getAttribute('data-w');
+            }, 100);
         }
 
         function renderComment(comment) {
@@ -516,15 +566,29 @@
         }
 
         function insertStandaloneReply(comment) {
+            removeEmpty();
             const div = document.createElement('div');
             div.className = 'card reply new-entry';
             div.innerHTML = `
                 <div class="card-header">
-                    <span class="card-meta">REPLY · ${comment.repo} #${comment.issueNumber}</span>
-                    <span class="card-lang">${(comment.direction || 'EN').toUpperCase()}</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.1rem;">💬</span>
+                        <div class="card-title" style="margin-bottom: 0;">Comment on #${comment.issueNumber}</div>
+                    </div>
+                    <span class="card-lang" style="background: var(--surface-bright); border: 1px solid var(--border);">${(comment.direction || '??').toUpperCase()}</span>
                 </div>
-                <div class="result-zone">${escape(comment.translatedBody)}</div>
-                <div class="card-meta">BY @${comment.author} · ${formatDate(comment.timestamp)}</div>
+                
+                <div class="result-zone">
+                    <span><span class="cb-mark">▶ ContribBridge</span> ${escape(comment.translatedBody)}</span>
+                </div>
+                
+                <div class="card-footer">
+                    <div class="tag-row">
+                        <span class="tag tag-open">REPLY</span>
+                    </div>
+                    <div class="issue-by">@${comment.author}</div>
+                </div>
+                <div class="card-meta" style="margin-top: 15px; text-align: right; opacity: 0.5;">${comment.repo} · ${formatDate(comment.timestamp)}</div>
             `;
             feed.prepend(div);
         }
@@ -533,15 +597,31 @@
             removeEmpty();
             const div = document.createElement('div');
             div.className = 'card new-entry';
-            div.style.background = 'var(--primary-dim)';
-            div.style.borderColor = 'var(--primary)';
+            div.style.borderLeft = '4px solid var(--primary)';
             div.innerHTML = `
                 <div class="card-header">
-                    <span class="card-meta" style="color: var(--primary)">LIVE PLAYGROUND RESULT</span>
-                    <span class="card-lang" style="background: var(--primary); color: #000;">EN</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.1rem;">🧪</span>
+                        <div class="card-title" style="margin-bottom: 0;">Playground Translation</div>
+                    </div>
+                    <span class="card-lang" style="background: var(--primary); color: var(--btn-text);">PL-EN</span>
                 </div>
-                <div class="context-zone" style="background: rgba(0,0,0,0.1)">ORIGINAL: ${escape(data.original)}</div>
-                <div class="result-zone" style="font-weight: 600;">${escape(data.translated)}</div>
+                
+                <div class="context-zone">
+                    <span style="opacity: 0.3; margin-right: 5px;">"</span>
+                    ${escape(data.original)}
+                </div>
+
+                <div class="result-zone">
+                    <span><span class="cb-mark">▶ ContribBridge</span> <span style="font-weight: 600;">${escape(data.translated)}</span></span>
+                </div>
+                
+                <div class="card-footer">
+                    <div class="tag-row">
+                        <span class="tag tag-feat">PLAYGROUND</span>
+                    </div>
+                    <div class="issue-by">@you</div>
+                </div>
             `;
             feed.prepend(div);
         }
