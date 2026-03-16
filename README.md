@@ -6,7 +6,7 @@ This project is a submission for the Lingo.Dev Hackathon.
 
 **Translate every GitHub issue in real-time using the Lingo.dev SDK — bidirectionally, across 87 languages, with zero config.**
 
-[**Live Dashboard Demo**](https://ajitpal.github.io/ContribBridge/) | [**GitHub Repo**](https://github.com/ajitpal/ContribBridge)
+[**Live Dashboard Demo**](https://contibbridge-production.up.railway.app/dashboard/) | [**GitHub Repo**](https://github.com/ajitpal/ContribBridge)
 
 57% of the world's developers don't write English fluently. They file bugs, find security issues, and request features — but maintainers never see them because they aren't written in English. **ContribBridge** fixes this with three simple command.
 
